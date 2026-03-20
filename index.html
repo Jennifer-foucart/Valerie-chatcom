@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Valérie — Chatcom</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:       #1a1a2e;
+      --paper:     #f5f0e8;
+      --cream:     #ede8dc;
+      --accent:    #8b5e3c;
+      --accent-lt: #c49a6c;
+      --muted:     #9a8f82;
+      --border:    rgba(139,94,60,.18);
+      --shadow:    0 4px 24px rgba(26,26,46,.07);
+      --red:       #ef4444;
+      --green:     #7cba7c;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      background: var(--paper); color: var(--ink);
+      height: 100dvh; display: flex; flex-direction: column;
+      align-items: center; overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%; max-width: 520px;
+      padding: 28px 28px 18px;
+      display: flex; align-items: baseline; gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
+    header span {
+      font-family: 'DM Mono', monospace; font-size: .7rem;
+      color: var(--muted); letter-spacing: .12em; text-transform: uppercase;
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+      margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2);
+    }
+
+    /* ── Portrait area ── */
+    #portrait-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      padding: 24px 0 8px;
+    }
+
+    .portrait-frame { position: relative; }
+
+    .ring {
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ring-outer {
+      width: 260px; height: 260px;
+      border: 2px solid var(--border);
+      transition: border-color .3s;
+    }
+    .ring-outer.speaking {
+      border-color: var(--accent-lt);
+      animation: speakring 1.6s ease infinite;
+    }
+    @keyframes speakring {
+      0%,100% { box-shadow: 0 0 0 0   rgba(196,154,108,.4); }
+      50%      { box-shadow: 0 0 0 14px rgba(196,154,108,0); }
+    }
+    .ring-inner {
+      width: 240px; height: 240px;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* ── Countdown overlay ── */
+    #countdown {
+      display: none;
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: rgba(26,26,46,.55);
+      align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    #countdown.show { display: flex; }
+    #countdown-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 5rem; font-weight: 300;
+      color: white; line-height: 1;
+      animation: popIn .35s ease both;
+    }
+    @keyframes popIn {
+      from { transform: scale(1.5); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes checkPop {
+      0%   { transform: scale(0.6); opacity: 0; }
+      60%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── Thinking dots ── */
+    #thinking-overlay {
+      display: none;
+      gap: 6px; align-items: center; justify-content: center;
+      position: absolute;
+      bottom: 18px; left: 50%; transform: translateX(-50%);
+    }
+    #thinking-overlay.show { display: flex; }
+    .tdot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent-lt); animation: bounce .9s ease infinite;
+    }
+    .tdot:nth-child(2) { animation-delay: .15s; }
+    .tdot:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); }
+      40%          { transform: translateY(-5px); }
+    }
+
+    /* ── Status label ── */
+    #status-label {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--muted); min-height: 1.2em; transition: color .3s;
+    }
+    #status-label.active { color: var(--accent-lt); }
+
+    /* ── Browser STT warning ── */
+    #stt-warning {
+      display: none;
+      font-family: 'DM Mono', monospace; font-size: .68rem;
+      color: var(--red); text-align: center; max-width: 320px; line-height: 1.5;
+    }
+
+    /* ── Input bar ── */
+    #input-bar {
+      width: 100%; max-width: 520px; padding: 16px 28px 28px;
+      display: flex; gap: 10px; align-items: center;
+      border-top: 1px solid var(--border); background: var(--paper);
+    }
+    #user-input {
+      flex: 1; font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem; background: var(--cream);
+      border: 1.5px solid var(--border); border-radius: 40px;
+      padding: 10px 20px; outline: none; color: var(--ink); transition: border-color .2s;
+    }
+    #user-input::placeholder { color: var(--muted); }
+    #user-input:focus { border-color: var(--accent-lt); }
+
+    .btn-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: var(--cream); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, border-color .2s, transform .1s; flex-shrink: 0;
+    }
+    .btn-icon:hover  { background: #dde8f5; border-color: var(--accent-lt); }
+    .btn-icon:active { transform: scale(.93); }
+    .btn-icon svg    { pointer-events: none; }
+    .btn-icon:disabled { opacity: .4; cursor: default; }
+
+    #mic-btn.in-call {
+      background: #fee2e2; border-color: var(--red);
+      animation: callpulse 1.4s ease infinite;
+    }
+    @keyframes callpulse {
+      0%,100% { box-shadow: 0 0 0 0   rgba(239,68,68,.35); }
+      50%      { box-shadow: 0 0 0 9px rgba(239,68,68,0);   }
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #3b0a0a; color: #fecaca;
+      font-family: 'DM Mono', monospace; font-size: .75rem;
+      padding: 8px 20px; border-radius: 8px;
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Valérie</h1>
+  <span>Chatcom · FR</span>
+  <div class="status-dot"></div>
+</header>
+
+<div id="portrait-wrap">
+  <div class="portrait-frame">
+    <div class="ring ring-outer" id="ring-outer">
+      <div class="ring ring-inner">
+        <img src="/static/valerie.jpg" alt="Valérie"
+             style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
+      </div>
+    </div>
+
+    <div id="countdown">
+      <span id="countdown-number"></span>
+    </div>
+
+    <div id="thinking-overlay">
+      <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+    </div>
+  </div>
+
+  <div id="status-label">en attente</div>
+  <div id="stt-warning">⚠ La reconnaissance vocale nécessite Chrome ou Edge</div>
+</div>
+
+<div id="input-bar">
+  <button class="btn-icon" id="mic-btn" title="Appel en direct">
+    <svg id="icon-call" width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
+               A19.5 19.5 0 0 1 4.08 12a19.79 19.79 0 0 1-3.07-8.67
+               A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81
+               a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27
+               a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+    <svg id="icon-endcall" width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+         style="display:none">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
+               A19.5 19.5 0 0 1 4.08 12a19.79 19.79 0 0 1-3.07-8.67
+               A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81
+               a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27
+               a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+      <line x1="1" y1="1" x2="23" y2="23" stroke="var(--red)" stroke-width="1.8"/>
+    </svg>
+  </button>
+
+  <input type="text" id="user-input" placeholder="Écrivez un message…" autocomplete="off"/>
+
+  <button class="btn-icon" id="send-btn" title="Envoyer">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  </button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── State ── */
+let inCall      = false;
+let recognition = null;
+let ttsAudio    = null;
+
+/* ── Elements ── */
+const input        = document.getElementById("user-input");
+const sendBtn      = document.getElementById("send-btn");
+const micBtn       = document.getElementById("mic-btn");
+const iconCall     = document.getElementById("icon-call");
+const iconEndCall  = document.getElementById("icon-endcall");
+const ringOuter    = document.getElementById("ring-outer");
+const statusLabel  = document.getElementById("status-label");
+const thinkingOvl  = document.getElementById("thinking-overlay");
+const countdownEl  = document.getElementById("countdown");
+const countdownNum = document.getElementById("countdown-number");
+const sttWarning   = document.getElementById("stt-warning");
+const toast        = document.getElementById("toast");
+
+/* ── Check Web Speech API support ── */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognition) {
+  micBtn.disabled = true;
+  sttWarning.style.display = "block";
+}
+
+/* ── Helpers ── */
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 3500);
+}
+
+function setStatus(text, active = false) {
+  statusLabel.textContent = text;
+  statusLabel.classList.toggle("active", active);
+}
+
+function setThinking(on) {
+  thinkingOvl.classList.toggle("show", on);
+  if (on) setStatus("réfléchit…", true);
+}
+
+function setSpeaking(on) {
+  ringOuter.classList.toggle("speaking", on);
+  if (on) setStatus("parle…", true);
+}
+
+/* ── Countdown: 3, 2, 1, ✓ ── */
+function animateNum(val) {
+  countdownNum.style.animation = "none";
+  countdownNum.offsetHeight;
+  countdownNum.textContent = val;
+  countdownNum.style.animation = "";
+}
+
+function runCountdown(onDone) {
+  const steps = ["3", "2", "1", "✓"];
+  let i = 0;
+  countdownNum.style.color = "white";
+  countdownNum.style.animationName = "popIn";
+  animateNum(steps[0]);
+  countdownEl.classList.add("show");
+
+  const iv = setInterval(() => {
+    i++;
+    if (i >= steps.length) {
+      clearInterval(iv);
+      countdownEl.classList.remove("show");
+      onDone();
+    } else {
+      if (steps[i] === "✓") {
+        countdownNum.style.color = "#7cba7c";
+        countdownNum.style.animationName = "checkPop";
+        countdownNum.style.animationDuration = "0.45s";
+      } else {
+        countdownNum.style.color = "white";
+        countdownNum.style.animationName = "popIn";
+        countdownNum.style.animationDuration = "0.35s";
+      }
+      animateNum(steps[i]);
+    }
+  }, 1000);
+}
+
+/* ── TTS: fetch WAV from server, play in browser ── */
+async function playTTS(text) {
+  setSpeaking(true);
+  try {
+    const res = await fetch("/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) { setSpeaking(false); return; }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+
+    // Stop any currently playing audio
+    if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
+
+    ttsAudio = new Audio(url);
+
+    // Pause recognition while Valérie speaks, resume after
+    if (recognition && inCall) recognition.stop();
+
+    ttsAudio.onended = () => {
+      setSpeaking(false);
+      URL.revokeObjectURL(url);
+      if (inCall) {
+        setStatus("écoute…", true);
+        try { recognition.start(); } catch(_) {}
+      } else {
+        setStatus("en attente");
+      }
+    };
+
+    ttsAudio.play();
+  } catch (e) {
+    setSpeaking(false);
+    console.warn("TTS error:", e);
+  }
+}
+
+/* ── Send message to /chat ── */
+async function sendMessage(text) {
+  text = (text || input.value).trim();
+  if (!text) return;
+  input.value = "";
+
+  setThinking(true);
+
+  try {
+    const res  = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    setThinking(false);
+
+    if (data.error) {
+      showToast("Erreur : " + data.error);
+      setStatus(inCall ? "écoute…" : "en attente", inCall);
+      return;
+    }
+
+    await playTTS(data.reply);
+
+  } catch (e) {
+    setThinking(false);
+    setStatus(inCall ? "écoute…" : "en attente", inCall);
+    showToast("Erreur réseau.");
+  }
+}
+
+/* ── Web Speech API recognition setup ── */
+function buildRecognition() {
+  const r = new SpeechRecognition();
+  r.lang       = "fr-FR";
+  r.continuous = false;        // fires one result then stops — we restart it
+  r.interimResults = false;
+
+  r.onresult = (e) => {
+    const transcript = e.results[0][0].transcript.trim();
+    if (transcript) sendMessage(transcript);
+  };
+
+  r.onerror = (e) => {
+    // "no-speech" is normal silence — just restart quietly
+    if (e.error === "no-speech" && inCall) {
+      try { r.start(); } catch(_) {}
+    }
+  };
+
+  r.onend = () => {
+    // Auto-restart as long as the call is active and we're not speaking/thinking
+    if (inCall && !ringOuter.classList.contains("speaking")) {
+      try { r.start(); } catch(_) {}
+    }
+  };
+
+  return r;
+}
+
+/* ── Call control ── */
+function startCall() {
+  micBtn.disabled = true;
+
+  runCountdown(() => {
+    recognition = buildRecognition();
+
+    try {
+      recognition.start();
+    } catch (e) {
+      showToast("Microphone non accessible.");
+      micBtn.disabled = false;
+      return;
+    }
+
+    inCall = true;
+    micBtn.disabled = false;
+    micBtn.classList.add("in-call");
+    iconCall.style.display    = "none";
+    iconEndCall.style.display = "";
+    setStatus("écoute…", true);
+  });
+}
+
+function stopCall() {
+  inCall = false;
+  if (recognition) { recognition.abort(); recognition = null; }
+  if (ttsAudio)    { ttsAudio.pause(); ttsAudio = null; }
+  micBtn.classList.remove("in-call");
+  iconCall.style.display    = "";
+  iconEndCall.style.display = "none";
+  setSpeaking(false);
+  setThinking(false);
+  setStatus("en attente");
+}
+
+function toggleCall() {
+  if (inCall) stopCall();
+  else        startCall();
+}
+
+/* ── Event listeners ── */
+sendBtn.addEventListener("click", () => sendMessage());
+input.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+micBtn.addEventListener("click", toggleCall);
+</script>
+</body>
+</html>

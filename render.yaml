@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: valerie-chatcom
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: AGENT_ID
+        sync: false
+      - key: INWORLD_API_KEY
+        sync: false
