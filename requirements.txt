@@ -1,4 +1,4 @@
 flask>=3.0
-mistralai>=1.2
+mistralai==1.12.1
 requests>=2.31
 gunicorn>=21.0
