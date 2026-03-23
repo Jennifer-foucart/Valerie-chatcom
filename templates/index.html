@@ -40,7 +40,6 @@
             overflow: hidden;
         }
 
-        /* ── Header ── */
         header {
             width: 100%;
             max-width: 520px;
@@ -76,7 +75,6 @@
             box-shadow: 0 0 0 3px rgba(124, 186, 124, .2);
         }
 
-        /* ── Portrait ── */
         #portrait-wrap {
             flex: 1;
             display: flex;
@@ -137,7 +135,6 @@
             display: block;
         }
 
-        /* ── Thinking dots (inside portrait, bottom) ── */
         #thinking-overlay {
             display: none;
             position: absolute;
@@ -146,7 +143,6 @@
             transform: translateX(-50%);
             gap: 6px;
             align-items: center;
-            justify-content: center;
         }
 
         #thinking-overlay.show {
@@ -182,7 +178,6 @@
             }
         }
 
-        /* ── Status label ── */
         #status-label {
             font-family: 'DM Mono', monospace;
             font-size: .72rem;
@@ -197,7 +192,6 @@
             color: var(--accent-lt);
         }
 
-        /* ── Interim transcript ── */
         #interim {
             font-family: 'Cormorant Garamond', serif;
             font-size: .95rem;
@@ -206,26 +200,14 @@
             min-height: 1.4em;
             max-width: 400px;
             text-align: center;
-            transition: opacity .2s;
             opacity: 0;
+            transition: opacity .2s;
         }
 
         #interim.show {
             opacity: 1;
         }
 
-        /* ── STT warning ── */
-        #stt-warning {
-            display: none;
-            font-family: 'DM Mono', monospace;
-            font-size: .68rem;
-            color: var(--red);
-            text-align: center;
-            max-width: 320px;
-            line-height: 1.5;
-        }
-
-        /* ── Input bar ── */
         #input-bar {
             width: 100%;
             max-width: 520px;
@@ -308,7 +290,6 @@
             }
         }
 
-        /* ── Toast ── */
         #toast {
             position: fixed;
             bottom: 80px;
@@ -350,15 +331,12 @@
                 <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
             </div>
         </div>
-
         <div id="status-label">en attente</div>
         <div id="interim"></div>
-        <div id="stt-warning">⚠ La reconnaissance vocale nécessite Chrome ou Edge</div>
     </div>
 
     <div id="input-bar">
         <button class="btn-icon" id="mic-btn" title="Appel en direct">
-            <!-- phone icon -->
             <svg id="icon-call" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
@@ -367,7 +345,6 @@
                a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27
                a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
             </svg>
-            <!-- end-call icon -->
             <svg id="icon-endcall" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
@@ -395,9 +372,15 @@
     <script>
         /* ── State ── */
         let inCall = false;
-        let recognition = null;
-        let ttsAudio = null;
-        let isSpeaking = false;  // true while TTS is playing
+        let isSpeaking = false;
+        let isProcessing = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let silenceTimer = null;
+        let audioStream = null;
+        let audioContext = null;
+        let analyser = null;
+        let silenceLoop = null;
 
         /* ── Elements ── */
         const inputEl = document.getElementById("user-input");
@@ -409,43 +392,27 @@
         const statusLabel = document.getElementById("status-label");
         const thinkingOvl = document.getElementById("thinking-overlay");
         const interimEl = document.getElementById("interim");
-        const sttWarning = document.getElementById("stt-warning");
         const toast = document.getElementById("toast");
 
-        /* ── Web Speech API availability ── */
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            micBtn.disabled = true;
-            sttWarning.style.display = "block";
-        }
-
-        /* ── UI helpers ── */
+        /* ── Helpers ── */
         function showToast(msg) {
             toast.textContent = msg;
             toast.classList.add("show");
             setTimeout(() => toast.classList.remove("show"), 3500);
         }
-
         function setStatus(text, active = false) {
             statusLabel.textContent = text;
             statusLabel.classList.toggle("active", active);
         }
-
         function setThinking(on) {
             thinkingOvl.classList.toggle("show", on);
             if (on) setStatus("réfléchit…", true);
         }
-
         function setSpeaking(on) {
             isSpeaking = on;
             ringOuter.classList.toggle("speaking", on);
-            if (on) {
-                setStatus("parle…", true);
-                interimEl.textContent = "";
-                interimEl.classList.remove("show");
-            }
+            if (on) { setStatus("parle…", true); setInterim(""); }
         }
-
         function setInterim(text) {
             interimEl.textContent = text;
             interimEl.classList.toggle("show", !!text);
@@ -454,57 +421,33 @@
         /* ── TTS ── */
         async function playTTS(text) {
             setSpeaking(true);
-            // Stop mic while Valérie speaks
-            if (recognition) recognition.abort();
-
             try {
                 const res = await fetch("/tts", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text })
                 });
-                if (!res.ok) { setSpeaking(false); resumeRecognition(); return; }
-
+                if (!res.ok) { setSpeaking(false); resumeListening(); return; }
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
-
-                if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
-                ttsAudio = new Audio(url);
-
-                ttsAudio.onended = () => {
-                    setSpeaking(false);
-                    URL.revokeObjectURL(url);
-                    resumeRecognition();
-                };
-
-                ttsAudio.onerror = () => {
-                    setSpeaking(false);
-                    resumeRecognition();
-                };
-
-                ttsAudio.play();
+                const audio = new Audio(url);
+                audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url); resumeListening(); };
+                audio.onerror = () => { setSpeaking(false); resumeListening(); };
+                audio.play();
             } catch (e) {
                 setSpeaking(false);
-                resumeRecognition();
-                console.warn("TTS error:", e);
+                resumeListening();
             }
-        }
-
-        function resumeRecognition() {
-            if (!inCall) { setStatus("en attente"); return; }
-            setStatus("écoute…", true);
-            try { recognition.start(); } catch (_) { }
         }
 
         /* ── Chat ── */
         async function sendMessage(text) {
             text = (text || inputEl.value).trim();
-            if (!text) return;
+            if (!text || isProcessing) return;
+            isProcessing = true;
             inputEl.value = "";
             setInterim("");
-
             setThinking(true);
-
             try {
                 const res = await fetch("/chat", {
                     method: "POST",
@@ -513,93 +456,146 @@
                 });
                 const data = await res.json();
                 setThinking(false);
-
-                if (data.error) {
-                    showToast("Erreur : " + data.error);
-                    resumeRecognition();
-                    return;
-                }
-
+                if (data.error) { showToast("Erreur : " + data.error); resumeListening(); return; }
                 await playTTS(data.reply);
-
             } catch (e) {
                 setThinking(false);
-                resumeRecognition();
+                resumeListening();
                 showToast("Erreur réseau.");
+            } finally {
+                isProcessing = false;
             }
         }
 
-        /* ── Speech recognition ── */
-        function buildRecognition() {
-            const r = new SpeechRecognition();
-            r.lang = "fr-FR";
-            r.continuous = true;   // keeps listening through long sentences
-            r.interimResults = true;   // shows live transcript as user speaks
+        /* ── Voice recording with silence detection ──
+           Mirrors the original Vosk loop:
+           - Records continuously
+           - Detects silence (like Vosk's AcceptWaveform firing on pause)
+           - Sends the complete utterance to /transcribe (Vosk server-side)
+           - Resumes listening after response — like original resume_microphone()
+        ── */
 
-            r.onresult = (e) => {
-                let interim = "";
-                let final = "";
+        const SILENCE_THRESHOLD = 10;   // RMS below this = silence
+        const SILENCE_DURATION = 1200; // ms of silence before sending
 
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    if (e.results[i].isFinal) {
-                        final += e.results[i][0].transcript;
-                    } else {
-                        interim += e.results[i][0].transcript;
+        function startListening() {
+            if (!inCall || isSpeaking || isProcessing) return;
+            setInterim("…");
+            setStatus("écoute…", true);
+
+            audioChunks = [];
+            mediaRecorder.start();
+
+            // Silence detection via Web Audio API analyser
+            const dataArray = new Uint8Array(analyser.fftSize);
+            let silentMs = 0;
+            let hasVoice = false;
+            const INTERVAL = 100;
+
+            silenceLoop = setInterval(() => {
+                if (!inCall || isSpeaking) { clearInterval(silenceLoop); return; }
+
+                analyser.getByteTimeDomainData(dataArray);
+
+                // RMS volume
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = (dataArray[i] - 128);
+                    sum += v * v;
+                }
+                const rms = Math.sqrt(sum / dataArray.length);
+
+                if (rms > SILENCE_THRESHOLD) {
+                    hasVoice = true;
+                    silentMs = 0;
+                    setInterim("🎤");
+                } else if (hasVoice) {
+                    silentMs += INTERVAL;
+                    if (silentMs >= SILENCE_DURATION) {
+                        // Silence after speech detected — stop and send
+                        clearInterval(silenceLoop);
+                        mediaRecorder.stop();   // triggers ondataavailable + onstop
                     }
                 }
+            }, INTERVAL);
+        }
 
-                // Show live partial transcript
-                if (interim) setInterim(interim);
-
-                // Send once sentence is finalised
-                if (final.trim()) {
-                    setInterim("");
-                    sendMessage(final.trim());
-                }
-            };
-
-            r.onerror = (e) => {
-                if (e.error === "no-speech") return;   // normal silence, ignore
-                if (e.error === "aborted") return;   // we aborted intentionally
-                showToast("Erreur micro : " + e.error);
-            };
-
-            r.onend = () => {
-                // Restart automatically unless we stopped the call or TTS is playing
-                if (inCall && !isSpeaking) {
-                    try { r.start(); } catch (_) { }
-                }
-            };
-
-            return r;
+        function resumeListening() {
+            if (!inCall) { setStatus("en attente"); return; }
+            // Small pause before listening again — mirrors original recognizer.Reset()
+            setTimeout(startListening, 400);
         }
 
         /* ── Call control ── */
-        function startCall() {
-            recognition = buildRecognition();
+        async function startCall() {
             try {
-                recognition.start();
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(audioStream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+
+                mediaRecorder = new MediaRecorder(audioStream);
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    if (!inCall || audioChunks.length === 0) return;
+
+                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    audioChunks = [];
+
+                    setInterim("…");
+                    setStatus("transcription…", true);
+
+                    try {
+                        const res = await fetch("/transcribe", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/octet-stream" },
+                            body: blob
+                        });
+                        const data = await res.json();
+                        if (data.text) {
+                            setInterim(data.text);
+                            await sendMessage(data.text);
+                        } else {
+                            // Nothing recognised — listen again
+                            resumeListening();
+                        }
+                    } catch (e) {
+                        showToast("Erreur transcription.");
+                        resumeListening();
+                    }
+                };
+
+                inCall = true;
+                micBtn.classList.add("in-call");
+                iconCall.style.display = "none";
+                iconEndCall.style.display = "";
+                startListening();
+
             } catch (e) {
                 showToast("Microphone non accessible.");
-                return;
             }
-            inCall = true;
-            micBtn.classList.add("in-call");
-            iconCall.style.display = "none";
-            iconEndCall.style.display = "";
-            setStatus("écoute…", true);
         }
 
         function stopCall() {
             inCall = false;
-            if (recognition) { recognition.abort(); recognition = null; }
-            if (ttsAudio) { ttsAudio.pause(); ttsAudio = null; }
-            setSpeaking(false);
-            setThinking(false);
-            setInterim("");
+            clearInterval(silenceLoop);
+            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+            if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+            if (audioContext) audioContext.close();
+            audioChunks = [];
+            isProcessing = false;
             micBtn.classList.remove("in-call");
             iconCall.style.display = "";
             iconEndCall.style.display = "none";
+            setSpeaking(false);
+            setThinking(false);
+            setInterim("");
             setStatus("en attente");
         }
 

@@ -4,10 +4,13 @@ import io
 import wave
 import threading
 import os
+import subprocess
+import tempfile
 
 import requests
 from flask import Flask, render_template, request, jsonify, Response
 from mistralai import Mistral
+from vosk import Model, KaldiRecognizer
 
 # =========================
 # CONFIG
@@ -21,6 +24,8 @@ INWORLD_TTS_URL = "https://api.inworld.ai/tts/v1/voice:stream"
 VOICE_ID = "Hélène"
 MODEL_ID  = "inworld-tts-1.5-max"
 
+VOSK_MODEL_PATH = os.environ.get("VOSK_MODEL_PATH", "models/vosk-model-small-fr-0.22")
+
 # =========================
 # INIT
 # =========================
@@ -32,6 +37,9 @@ app = Flask(
 )
 client = Mistral(api_key=MISTRAL_API_KEY)
 
+# Load Vosk model once at startup — same as original
+vosk_model = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
+
 conversation_history = []
 
 inworld_session = requests.Session()
@@ -42,7 +50,7 @@ inworld_session.headers.update({
 })
 
 # =========================
-# TTS HELPERS
+# TTS HELPERS  (unchanged from original)
 # =========================
 
 def extract_pcm_from_wav_chunk(wav_bytes: bytes) -> bytes:
@@ -89,6 +97,53 @@ def synthesize_speech(text: str) -> bytes:
                 all_pcm += pcm_bytes
     return pcm_to_wav_bytes(all_pcm)
 
+
+# =========================
+# VOSK TRANSCRIPTION  (same logic as original process_audio)
+# =========================
+
+def transcribe_audio(audio_bytes: bytes) -> str:
+    """
+    Receives a complete audio recording from the browser (webm/wav),
+    converts to 16kHz mono WAV with ffmpeg — exactly like the original
+    resampling step — then runs through Vosk KaldiRecognizer.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_path  = os.path.join(tmpdir, "input.webm")
+        output_path = os.path.join(tmpdir, "output.wav")
+
+        with open(input_path, "wb") as f:
+            f.write(audio_bytes)
+
+        # Convert to 16kHz mono WAV — same target as original resample to 16000
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", input_path,
+             "-ar", "16000", "-ac", "1", "-f", "wav", output_path],
+            capture_output=True, check=True
+        )
+
+        # Feed through Vosk — identical to original recognizer.AcceptWaveform loop
+        rec = KaldiRecognizer(vosk_model, 16000)
+        transcribed = []
+
+        with open(output_path, "rb") as wf:
+            wf.read(44)  # skip WAV header
+            while True:
+                block = wf.read(4000)
+                if not block:
+                    break
+                if rec.AcceptWaveform(block):
+                    result = json.loads(rec.Result())
+                    if result.get("text"):
+                        transcribed.append(result["text"])
+
+        final = json.loads(rec.FinalResult())
+        if final.get("text"):
+            transcribed.append(final["text"])
+
+        return " ".join(transcribed).strip()
+
+
 # =========================
 # ROUTES
 # =========================
@@ -96,6 +151,22 @@ def synthesize_speech(text: str) -> bytes:
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/transcribe", methods=["POST"])
+def transcribe():
+    """
+    Browser sends a complete audio recording.
+    Server transcribes with Vosk and returns the text.
+    """
+    audio_bytes = request.data
+    if not audio_bytes:
+        return jsonify({"error": "No audio received"}), 400
+    try:
+        text = transcribe_audio(audio_bytes)
+        return jsonify({"text": text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/chat", methods=["POST"])
@@ -149,4 +220,4 @@ def reset_history():
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
