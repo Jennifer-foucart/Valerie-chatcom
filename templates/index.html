@@ -309,10 +309,189 @@
         #toast.show {
             opacity: 1;
         }
+
+        /* ── Welcome / fiche page ── */
+        #welcome-page {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: var(--paper);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 28px;
+            animation: fadeIn .5s ease both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #welcome-page.hidden {
+            animation: fadeOut .4s ease both;
+            pointer-events: none;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+        }
+
+        .fiche {
+            max-width: 480px;
+            width: 100%;
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 36px 40px;
+            box-shadow: 0 8px 40px rgba(26, 26, 46, .08);
+        }
+
+        .fiche-header {
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 18px;
+        }
+
+        .fiche-tag {
+            font-family: 'DM Mono', monospace;
+            font-size: .65rem;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--accent-lt);
+            margin-bottom: 8px;
+        }
+
+        .fiche-title {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: .03em;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+
+        .fiche-section {
+            margin-bottom: 22px;
+        }
+
+        .fiche-section:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .fiche-section-title {
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .fiche-section p {
+            font-size: 1.05rem;
+            font-weight: 300;
+            line-height: 1.7;
+            color: var(--ink);
+        }
+
+        .fiche-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .fiche-section ul li {
+            font-size: 1.05rem;
+            font-weight: 300;
+            line-height: 1.7;
+            color: var(--ink);
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .fiche-section ul li::before {
+            content: "—";
+            position: absolute;
+            left: 0;
+            color: var(--accent-lt);
+        }
+
+        #next-btn {
+            margin-top: 32px;
+            width: 100%;
+            max-width: 480px;
+            padding: 14px 0;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: .06em;
+            background: var(--accent);
+            color: var(--paper);
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+        }
+
+        #next-btn:hover {
+            background: var(--accent-lt);
+        }
+
+        #next-btn:active {
+            transform: scale(.98);
+        }
     </style>
 </head>
 
 <body>
+
+
+    <!-- ── Welcome / fiche patiente ── -->
+    <div id="welcome-page">
+        <div class="fiche">
+            <div class="fiche-header">
+                <div class="fiche-tag">Fiche Patiente</div>
+                <div class="fiche-title">Valérie Decocq</div>
+            </div>
+
+            <div class="fiche-section">
+                <div class="fiche-section-title">Identité &amp; Contexte</div>
+                <p>40 ans, mère de 2 enfants (2 et 6 ans), en couple.<br />Responsable de communication.</p>
+            </div>
+
+            <div class="fiche-section">
+                <div class="fiche-section-title">Motif de consultation</div>
+                <p>Douleurs diffuses chroniques depuis 3 mois.<br />Examens normaux (radios, bilans).</p>
+            </div>
+
+            <div class="fiche-section">
+                <div class="fiche-section-title">Parcours médical</div>
+                <p style="margin-bottom:8px">Traitements essayés :</p>
+                <ul>
+                    <li>Antidouleurs / anti-inflammatoires</li>
+                    <li>Modifications alimentaires</li>
+                </ul>
+            </div>
+        </div>
+
+        <button id="next-btn">Commencer la consultation →</button>
+    </div>
 
     <header>
         <h1>Valérie</h1>
@@ -603,6 +782,14 @@
             if (inCall) stopCall();
             else startCall();
         }
+
+
+        /* ── Welcome page transition ── */
+        document.getElementById("next-btn").addEventListener("click", () => {
+            const page = document.getElementById("welcome-page");
+            page.classList.add("hidden");
+            page.addEventListener("animationend", () => page.remove(), { once: true });
+        });
 
         /* ── Events ── */
         sendBtn.addEventListener("click", () => sendMessage());
