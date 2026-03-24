@@ -497,6 +497,10 @@
         <h1>Valérie</h1>
         <span>Chatcom · FR</span>
         <div class="status-dot"></div>
+        <button id="back-btn" title="Retour"
+            style="margin-left:12px;background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s;"
+            onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">←
+            retour</button>
     </header>
 
     <div id="portrait-wrap">
@@ -789,6 +793,49 @@
             const page = document.getElementById("welcome-page");
             page.classList.add("hidden");
             page.addEventListener("animationend", () => page.remove(), { once: true });
+        });
+
+
+        /* ── Back to welcome page ── */
+        document.getElementById("back-btn").addEventListener("click", () => {
+            // Stop call if active
+            if (inCall) stopCall();
+
+            // Rebuild and re-insert the welcome page
+            const page = document.createElement("div");
+            page.id = "welcome-page";
+            page.innerHTML = `
+    <div class="fiche">
+      <div class="fiche-header">
+        <div class="fiche-tag">Fiche Patiente</div>
+        <div class="fiche-title">Valérie Decocq</div>
+      </div>
+      <div class="fiche-section">
+        <div class="fiche-section-title">Identité &amp; Contexte</div>
+        <p>40 ans, mère de 2 enfants (2 et 6 ans), en couple.<br/>Responsable de communication.</p>
+      </div>
+      <div class="fiche-section">
+        <div class="fiche-section-title">Motif de consultation</div>
+        <p>Douleurs diffuses chroniques depuis 3 mois.<br/>Examens normaux (radios, bilans).</p>
+      </div>
+      <div class="fiche-section">
+        <div class="fiche-section-title">Parcours médical</div>
+        <p style="margin-bottom:8px">Traitements essayés :</p>
+        <ul>
+          <li>Antidouleurs / anti-inflammatoires</li>
+          <li>Modifications alimentaires</li>
+        </ul>
+      </div>
+    </div>
+    <button id="next-btn">Commencer la consultation →</button>
+  `;
+            document.body.prepend(page);
+
+            // Wire up the next button again
+            document.getElementById("next-btn").addEventListener("click", () => {
+                page.classList.add("hidden");
+                page.addEventListener("animationend", () => page.remove(), { once: true });
+            });
         });
 
         /* ── Events ── */
