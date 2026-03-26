@@ -2,13 +2,13 @@ import json
 import base64
 import io
 import wave
-import re
+import threading
 import os
 import subprocess
 import tempfile
 
 import requests
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context
+from flask import Flask, render_template, request, jsonify, Response
 from mistralai import Mistral
 from vosk import Model, KaldiRecognizer
 
@@ -36,6 +36,8 @@ app = Flask(
     static_folder=os.path.join(_BASE_DIR, "static")
 )
 client = Mistral(api_key=MISTRAL_API_KEY)
+
+# Load Vosk model once at startup — same as original
 vosk_model = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
 conversation_history = []
@@ -48,7 +50,7 @@ inworld_session.headers.update({
 })
 
 # =========================
-# HELPERS
+# TTS HELPERS  (unchanged from original)
 # =========================
 
 def extract_pcm_from_wav_chunk(wav_bytes: bytes) -> bytes:
@@ -66,8 +68,7 @@ def pcm_to_wav_bytes(pcm_bytes: bytes, sample_rate=48000, channels=1) -> bytes:
     return buf.getvalue()
 
 
-def synthesize_to_wav(text: str) -> bytes:
-    """Convert a single sentence to WAV bytes via Inworld TTS."""
+def synthesize_speech(text: str) -> bytes:
     payload = {
         "text": text,
         "voiceId": VOICE_ID,
@@ -80,9 +81,9 @@ def synthesize_to_wav(text: str) -> bytes:
         }
     }
     all_pcm = b""
-    with inworld_session.post(INWORLD_TTS_URL, json=payload, stream=True, timeout=15) as resp:
-        resp.raise_for_status()
-        for line in resp.iter_lines():
+    with inworld_session.post(INWORLD_TTS_URL, json=payload, stream=True, timeout=15) as response:
+        response.raise_for_status()
+        for line in response.iter_lines():
             if not line:
                 continue
             chunk_j   = json.loads(line)
@@ -90,19 +91,23 @@ def synthesize_to_wav(text: str) -> bytes:
             audio_b64 = result.get("audioContent")
             if not audio_b64:
                 continue
-            pcm = extract_pcm_from_wav_chunk(base64.b64decode(audio_b64))
-            if pcm:
-                all_pcm += pcm
+            wav_bytes = base64.b64decode(audio_b64)
+            pcm_bytes = extract_pcm_from_wav_chunk(wav_bytes)
+            if pcm_bytes:
+                all_pcm += pcm_bytes
     return pcm_to_wav_bytes(all_pcm)
 
 
-def split_sentences(text: str):
-    """Split text into sentences on . ! ? … — keeping punctuation attached."""
-    parts = re.split(r'(?<=[.!?…])\s+', text.strip())
-    return [p.strip() for p in parts if p.strip()]
-
+# =========================
+# VOSK TRANSCRIPTION  (same logic as original process_audio)
+# =========================
 
 def transcribe_audio(audio_bytes: bytes) -> str:
+    """
+    Receives a complete audio recording from the browser (webm/wav),
+    converts to 16kHz mono WAV with ffmpeg — exactly like the original
+    resampling step — then runs through Vosk KaldiRecognizer.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         input_path  = os.path.join(tmpdir, "input.webm")
         output_path = os.path.join(tmpdir, "output.wav")
@@ -110,17 +115,19 @@ def transcribe_audio(audio_bytes: bytes) -> str:
         with open(input_path, "wb") as f:
             f.write(audio_bytes)
 
+        # Convert to 16kHz mono WAV — same target as original resample to 16000
         subprocess.run(
             ["ffmpeg", "-y", "-i", input_path,
              "-ar", "16000", "-ac", "1", "-f", "wav", output_path],
             capture_output=True, check=True
         )
 
+        # Feed through Vosk — identical to original recognizer.AcceptWaveform loop
         rec = KaldiRecognizer(vosk_model, 16000)
         transcribed = []
 
         with open(output_path, "rb") as wf:
-            wf.read(44)
+            wf.read(44)  # skip WAV header
             while True:
                 block = wf.read(4000)
                 if not block:
@@ -148,6 +155,10 @@ def index():
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
+    """
+    Browser sends a complete audio recording.
+    Server transcribes with Vosk and returns the text.
+    """
     audio_bytes = request.data
     if not audio_bytes:
         return jsonify({"error": "No audio received"}), 400
@@ -158,16 +169,8 @@ def transcribe():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/chat_stream", methods=["POST"])
-def chat_stream():
-    """
-    1. Gets full reply from Mistral
-    2. Splits into sentences
-    3. Streams each sentence as a JSON line:
-       {"sentence": "...", "audio": "<base64 WAV>"}
-    Browser plays audio chunks in order as they arrive —
-    speech starts after the first sentence, not the full reply.
-    """
+@app.route("/chat", methods=["POST"])
+def chat():
     data      = request.get_json()
     user_text = data.get("message", "").strip()
     if not user_text:
@@ -179,24 +182,26 @@ def chat_stream():
         response        = client.beta.conversations.start(agent_id=AGENT_ID, inputs=conversation_history)
         assistant_reply = response.outputs[0].content
         conversation_history.append({"role": "assistant", "content": assistant_reply})
+        return jsonify({"reply": assistant_reply})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    sentences = split_sentences(assistant_reply)
 
-    @stream_with_context
-    def generate():
-        for sentence in sentences:
-            try:
-                wav = synthesize_to_wav(sentence)
-                audio_b64 = base64.b64encode(wav).decode("utf-8")
-            except Exception:
-                audio_b64 = ""
-
-            line = json.dumps({"sentence": sentence, "audio": audio_b64})
-            yield line + "\n"
-
-    return Response(generate(), mimetype="application/x-ndjson")
+@app.route("/tts", methods=["POST"])
+def tts():
+    data = request.get_json()
+    text = data.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+    try:
+        wav_bytes = synthesize_speech(text)
+        return Response(
+            wav_bytes,
+            mimetype="audio/wav",
+            headers={"Content-Disposition": "inline; filename=speech.wav"}
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/history", methods=["GET"])
