@@ -601,29 +601,40 @@
             interimEl.classList.toggle("show", !!text);
         }
 
-        /* ── TTS ── */
-        async function playTTS(text) {
-            setSpeaking(true);
-            try {
-                const res = await fetch("/tts", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text })
-                });
-                if (!res.ok) { setSpeaking(false); resumeListening(); return; }
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url); resumeListening(); };
-                audio.onerror = () => { setSpeaking(false); resumeListening(); };
-                audio.play();
-            } catch (e) {
-                setSpeaking(false);
-                resumeListening();
-            }
+        /* TTS is now handled via /chat_stream audio queue */
+
+        /* ── Audio queue — plays sentence WAVs in order ── */
+        const audioQueue = [];
+        let isPlayingQueue = false;
+
+        function enqueueAudio(base64wav) {
+            audioQueue.push(base64wav);
+            if (!isPlayingQueue) playNextInQueue();
         }
 
-        /* ── Chat ── */
+        function playNextInQueue() {
+            if (audioQueue.length === 0) {
+                isPlayingQueue = false;
+                setSpeaking(false);
+                resumeListening();
+                return;
+            }
+            isPlayingQueue = true;
+            setSpeaking(true);
+
+            const b64 = audioQueue.shift();
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: "audio/wav" });
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.onended = () => { URL.revokeObjectURL(url); playNextInQueue(); };
+            audio.onerror = () => { URL.revokeObjectURL(url); playNextInQueue(); };
+            audio.play();
+        }
+
+        /* ── Chat — streams sentence by sentence ── */
         async function sendMessage(text) {
             text = (text || inputEl.value).trim();
             if (!text || isProcessing) return;
@@ -631,16 +642,47 @@
             inputEl.value = "";
             setInterim("");
             setThinking(true);
+
+            // Clear any leftover audio from previous turn
+            audioQueue.length = 0;
+            isPlayingQueue = false;
+
             try {
-                const res = await fetch("/chat", {
+                const res = await fetch("/chat_stream", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ message: text })
                 });
-                const data = await res.json();
-                setThinking(false);
-                if (data.error) { showToast("Erreur : " + data.error); resumeListening(); return; }
-                await playTTS(data.reply);
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Server error");
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let first = true;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("");
+                    buffer = lines.pop(); // keep incomplete line
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        const chunk = JSON.parse(line);
+
+                        // Hide thinking dots on first sentence arriving
+                        if (first) { setThinking(false); first = false; }
+
+                        if (chunk.audio) enqueueAudio(chunk.audio);
+                    }
+                }
+
             } catch (e) {
                 setThinking(false);
                 resumeListening();
