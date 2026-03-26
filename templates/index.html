@@ -40,6 +40,7 @@
             overflow: hidden;
         }
 
+        /* ── Header ── */
         header {
             width: 100%;
             max-width: 520px;
@@ -75,6 +76,24 @@
             box-shadow: 0 0 0 3px rgba(124, 186, 124, .2);
         }
 
+        #back-btn {
+            margin-left: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            transition: color .2s;
+        }
+
+        #back-btn:hover {
+            color: var(--accent);
+        }
+
+        /* ── Portrait ── */
         #portrait-wrap {
             flex: 1;
             display: flex;
@@ -208,6 +227,7 @@
             opacity: 1;
         }
 
+        /* ── Input bar ── */
         #input-bar {
             width: 100%;
             max-width: 520px;
@@ -461,7 +481,6 @@
 
 <body>
 
-
     <!-- ── Welcome / fiche patiente ── -->
     <div id="welcome-page">
         <div class="fiche">
@@ -469,17 +488,14 @@
                 <div class="fiche-tag">Fiche Patiente</div>
                 <div class="fiche-title">Valérie Decocq</div>
             </div>
-
             <div class="fiche-section">
                 <div class="fiche-section-title">Identité &amp; Contexte</div>
                 <p>40 ans, mère de 2 enfants (2 et 6 ans), en couple.<br />Responsable de communication.</p>
             </div>
-
             <div class="fiche-section">
                 <div class="fiche-section-title">Motif de consultation</div>
                 <p>Douleurs diffuses chroniques depuis 3 mois.<br />Examens normaux (radios, bilans).</p>
             </div>
-
             <div class="fiche-section">
                 <div class="fiche-section-title">Parcours médical</div>
                 <p style="margin-bottom:8px">Traitements essayés :</p>
@@ -489,7 +505,6 @@
                 </ul>
             </div>
         </div>
-
         <button id="next-btn">Commencer la consultation →</button>
     </div>
 
@@ -497,10 +512,7 @@
         <h1>Valérie</h1>
         <span>Chatcom · FR</span>
         <div class="status-dot"></div>
-        <button id="back-btn" title="Retour"
-            style="margin-left:12px;background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);transition:color .2s;"
-            onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">←
-            retour</button>
+        <button id="back-btn">← retour</button>
     </header>
 
     <div id="portrait-wrap">
@@ -559,11 +571,10 @@
         let isProcessing = false;
         let mediaRecorder = null;
         let audioChunks = [];
-        let silenceTimer = null;
+        let silenceLoop = null;
         let audioStream = null;
         let audioContext = null;
         let analyser = null;
-        let silenceLoop = null;
 
         /* ── Elements ── */
         const inputEl = document.getElementById("user-input");
@@ -577,7 +588,7 @@
         const interimEl = document.getElementById("interim");
         const toast = document.getElementById("toast");
 
-        /* ── Helpers ── */
+        /* ── UI helpers ── */
         function showToast(msg) {
             toast.textContent = msg;
             toast.classList.add("show");
@@ -601,29 +612,43 @@
             interimEl.classList.toggle("show", !!text);
         }
 
-        /* ── TTS ── */
-        async function playTTS(text) {
-            setSpeaking(true);
-            try {
-                const res = await fetch("/tts", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text })
-                });
-                if (!res.ok) { setSpeaking(false); resumeListening(); return; }
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url); resumeListening(); };
-                audio.onerror = () => { setSpeaking(false); resumeListening(); };
-                audio.play();
-            } catch (e) {
-                setSpeaking(false);
-                resumeListening();
-            }
+        /* ── Audio queue — plays Opus sentences one after another ──
+           Each sentence is a separate MediaSource so we can start
+           playing sentence 1 while sentence 2 is still being fetched.
+        ── */
+        let audioQueue = [];   // array of Blob objects (one per sentence)
+        let isPlaying = false;
+
+        function enqueueAndPlay(opusBlob) {
+            audioQueue.push(opusBlob);
+            if (!isPlaying) playNext();
         }
 
-        /* ── Chat ── */
+        function playNext() {
+            if (audioQueue.length === 0) {
+                // All sentences done
+                setSpeaking(false);
+                resumeListening();
+                return;
+            }
+            isPlaying = true;
+            const blob = audioQueue.shift();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.onended = () => {
+                URL.revokeObjectURL(url);
+                isPlaying = false;
+                playNext();
+            };
+            audio.onerror = () => {
+                URL.revokeObjectURL(url);
+                isPlaying = false;
+                playNext();
+            };
+            audio.play().catch(() => { isPlaying = false; playNext(); });
+        }
+
+        /* ── Send message — streams response sentence by sentence ── */
         async function sendMessage(text) {
             text = (text || inputEl.value).trim();
             if (!text || isProcessing) return;
@@ -631,16 +656,63 @@
             inputEl.value = "";
             setInterim("");
             setThinking(true);
+            audioQueue = [];
+            isPlaying = false;
+
             try {
-                const res = await fetch("/chat", {
+                const res = await fetch("/chat_stream", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ message: text })
                 });
-                const data = await res.json();
-                setThinking(false);
-                if (data.error) { showToast("Erreur : " + data.error); resumeListening(); return; }
-                await playTTS(data.reply);
+
+                if (!res.ok) {
+                    setThinking(false);
+                    resumeListening();
+                    showToast("Erreur serveur.");
+                    return;
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let currentChunks = [];   // Opus chunks for the sentence being built
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();   // keep incomplete line
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        let msg;
+                        try { msg = JSON.parse(line); } catch { continue; }
+
+                        if (msg.type === "sentence_start") {
+                            // First sentence arriving — hide thinking dots, show speaking ring
+                            setThinking(false);
+                            setSpeaking(true);
+                            currentChunks = [];
+
+                        } else if (msg.type === "audio") {
+                            // Accumulate Opus chunks for this sentence
+                            const bytes = Uint8Array.from(atob(msg.data), c => c.charCodeAt(0));
+                            currentChunks.push(bytes);
+
+                        } else if (msg.type === "sentence_end") {
+                            // Sentence complete — build blob and enqueue for playback
+                            if (currentChunks.length > 0) {
+                                const blob = new Blob(currentChunks, { type: "audio/ogg; codecs=opus" });
+                                enqueueAndPlay(blob);
+                            }
+                            currentChunks = [];
+                        }
+                    }
+                }
+
             } catch (e) {
                 setThinking(false);
                 resumeListening();
@@ -650,26 +722,17 @@
             }
         }
 
-        /* ── Voice recording with silence detection ──
-           Mirrors the original Vosk loop:
-           - Records continuously
-           - Detects silence (like Vosk's AcceptWaveform firing on pause)
-           - Sends the complete utterance to /transcribe (Vosk server-side)
-           - Resumes listening after response — like original resume_microphone()
-        ── */
-
-        const SILENCE_THRESHOLD = 10;   // RMS below this = silence
-        const SILENCE_DURATION = 1200; // ms of silence before sending
+        /* ── Voice recording with silence detection ── */
+        const SILENCE_THRESHOLD = 10;
+        const SILENCE_DURATION = 1200;
 
         function startListening() {
             if (!inCall || isSpeaking || isProcessing) return;
             setInterim("…");
             setStatus("écoute…", true);
-
             audioChunks = [];
             mediaRecorder.start();
 
-            // Silence detection via Web Audio API analyser
             const dataArray = new Uint8Array(analyser.fftSize);
             let silentMs = 0;
             let hasVoice = false;
@@ -677,27 +740,18 @@
 
             silenceLoop = setInterval(() => {
                 if (!inCall || isSpeaking) { clearInterval(silenceLoop); return; }
-
                 analyser.getByteTimeDomainData(dataArray);
-
-                // RMS volume
                 let sum = 0;
-                for (let i = 0; i < dataArray.length; i++) {
-                    const v = (dataArray[i] - 128);
-                    sum += v * v;
-                }
+                for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i] - 128; sum += v * v; }
                 const rms = Math.sqrt(sum / dataArray.length);
 
                 if (rms > SILENCE_THRESHOLD) {
-                    hasVoice = true;
-                    silentMs = 0;
-                    setInterim("🎤");
+                    hasVoice = true; silentMs = 0; setInterim("🎤");
                 } else if (hasVoice) {
                     silentMs += INTERVAL;
                     if (silentMs >= SILENCE_DURATION) {
-                        // Silence after speech detected — stop and send
                         clearInterval(silenceLoop);
-                        mediaRecorder.stop();   // triggers ondataavailable + onstop
+                        mediaRecorder.stop();
                     }
                 }
             }, INTERVAL);
@@ -705,7 +759,6 @@
 
         function resumeListening() {
             if (!inCall) { setStatus("en attente"); return; }
-            // Small pause before listening again — mirrors original recognizer.Reset()
             setTimeout(startListening, 400);
         }
 
@@ -720,20 +773,13 @@
                 source.connect(analyser);
 
                 mediaRecorder = new MediaRecorder(audioStream);
-
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) audioChunks.push(e.data);
-                };
-
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
                 mediaRecorder.onstop = async () => {
                     if (!inCall || audioChunks.length === 0) return;
-
                     const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
                     audioChunks = [];
-
                     setInterim("…");
                     setStatus("transcription…", true);
-
                     try {
                         const res = await fetch("/transcribe", {
                             method: "POST",
@@ -741,17 +787,9 @@
                             body: blob
                         });
                         const data = await res.json();
-                        if (data.text) {
-                            setInterim(data.text);
-                            await sendMessage(data.text);
-                        } else {
-                            // Nothing recognised — listen again
-                            resumeListening();
-                        }
-                    } catch (e) {
-                        showToast("Erreur transcription.");
-                        resumeListening();
-                    }
+                        if (data.text) { setInterim(data.text); await sendMessage(data.text); }
+                        else resumeListening();
+                    } catch (e) { showToast("Erreur transcription."); resumeListening(); }
                 };
 
                 inCall = true;
@@ -759,10 +797,7 @@
                 iconCall.style.display = "none";
                 iconEndCall.style.display = "";
                 startListening();
-
-            } catch (e) {
-                showToast("Microphone non accessible.");
-            }
+            } catch (e) { showToast("Microphone non accessible."); }
         }
 
         function stopCall() {
@@ -772,7 +807,9 @@
             if (audioStream) audioStream.getTracks().forEach(t => t.stop());
             if (audioContext) audioContext.close();
             audioChunks = [];
+            audioQueue = [];
             isProcessing = false;
+            isPlaying = false;
             micBtn.classList.remove("in-call");
             iconCall.style.display = "";
             iconEndCall.style.display = "none";
@@ -787,21 +824,8 @@
             else startCall();
         }
 
-
-        /* ── Welcome page transition ── */
-        document.getElementById("next-btn").addEventListener("click", () => {
-            const page = document.getElementById("welcome-page");
-            page.classList.add("hidden");
-            page.addEventListener("animationend", () => page.remove(), { once: true });
-        });
-
-
-        /* ── Back to welcome page ── */
-        document.getElementById("back-btn").addEventListener("click", () => {
-            // Stop call if active
-            if (inCall) stopCall();
-
-            // Rebuild and re-insert the welcome page
+        /* ── Welcome page ── */
+        function buildWelcomePage() {
             const page = document.createElement("div");
             page.id = "welcome-page";
             page.innerHTML = `
@@ -830,18 +854,27 @@
     <button id="next-btn">Commencer la consultation →</button>
   `;
             document.body.prepend(page);
-
-            // Wire up the next button again
             document.getElementById("next-btn").addEventListener("click", () => {
                 page.classList.add("hidden");
                 page.addEventListener("animationend", () => page.remove(), { once: true });
             });
-        });
+        }
 
         /* ── Events ── */
         sendBtn.addEventListener("click", () => sendMessage());
         inputEl.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
         micBtn.addEventListener("click", toggleCall);
+
+        document.getElementById("next-btn").addEventListener("click", () => {
+            const page = document.getElementById("welcome-page");
+            page.classList.add("hidden");
+            page.addEventListener("animationend", () => page.remove(), { once: true });
+        });
+
+        document.getElementById("back-btn").addEventListener("click", () => {
+            if (inCall) stopCall();
+            buildWelcomePage();
+        });
     </script>
 </body>
 

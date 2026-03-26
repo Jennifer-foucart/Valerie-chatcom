@@ -2,13 +2,13 @@ import json
 import base64
 import io
 import wave
-import threading
+import re
 import os
 import subprocess
 import tempfile
 
 import requests
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 from mistralai import Mistral
 from vosk import Model, KaldiRecognizer
 
@@ -35,10 +35,8 @@ app = Flask(
     template_folder=os.path.join(_BASE_DIR, "templates"),
     static_folder=os.path.join(_BASE_DIR, "static")
 )
-client = Mistral(api_key=MISTRAL_API_KEY)
-
-# Load Vosk model once at startup — same as original
-vosk_model = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
+client      = Mistral(api_key=MISTRAL_API_KEY)
+vosk_model  = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
 conversation_history = []
 
@@ -49,65 +47,47 @@ inworld_session.headers.update({
     "Connection": "keep-alive"
 })
 
+
 # =========================
-# TTS HELPERS  (unchanged from original)
+# HELPERS
 # =========================
 
-def extract_pcm_from_wav_chunk(wav_bytes: bytes) -> bytes:
-    with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
-        return wf.readframes(wf.getnframes())
+def split_sentences(text: str):
+    """Split reply into sentences so TTS can start on the first one immediately."""
+    parts = re.split(r'(?<=[.!?…])\s+', text.strip())
+    return [p.strip() for p in parts if p.strip()]
 
 
-def pcm_to_wav_bytes(pcm_bytes: bytes, sample_rate=48000, channels=1) -> bytes:
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as wf:
-        wf.setnchannels(channels)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(pcm_bytes)
-    return buf.getvalue()
-
-
-def synthesize_speech(text: str) -> bytes:
+def stream_opus_chunks(text: str):
+    """
+    Call Inworld TTS with OGG_OPUS encoding and yield raw Ogg Opus bytes
+    as they arrive — no buffering, no conversion needed.
+    """
     payload = {
         "text": text,
         "voiceId": VOICE_ID,
         "modelId": MODEL_ID,
         "temperature": 1.48,
         "audio_config": {
-            "audio_encoding": "LINEAR16",
+            "audio_encoding": "OGG_OPUS",
             "sample_rate_hz": 48000,
             "speaking_rate": 1.1
         }
     }
-    all_pcm = b""
-    with inworld_session.post(INWORLD_TTS_URL, json=payload, stream=True, timeout=15) as response:
-        response.raise_for_status()
-        for line in response.iter_lines():
+    with inworld_session.post(INWORLD_TTS_URL, json=payload, stream=True, timeout=15) as resp:
+        resp.raise_for_status()
+        for line in resp.iter_lines():
             if not line:
                 continue
             chunk_j   = json.loads(line)
             result    = chunk_j.get("result", {})
             audio_b64 = result.get("audioContent")
-            if not audio_b64:
-                continue
-            wav_bytes = base64.b64decode(audio_b64)
-            pcm_bytes = extract_pcm_from_wav_chunk(wav_bytes)
-            if pcm_bytes:
-                all_pcm += pcm_bytes
-    return pcm_to_wav_bytes(all_pcm)
+            if audio_b64:
+                yield base64.b64decode(audio_b64)
 
-
-# =========================
-# VOSK TRANSCRIPTION  (same logic as original process_audio)
-# =========================
 
 def transcribe_audio(audio_bytes: bytes) -> str:
-    """
-    Receives a complete audio recording from the browser (webm/wav),
-    converts to 16kHz mono WAV with ffmpeg — exactly like the original
-    resampling step — then runs through Vosk KaldiRecognizer.
-    """
+    """Convert browser audio → 16kHz WAV → Vosk transcription."""
     with tempfile.TemporaryDirectory() as tmpdir:
         input_path  = os.path.join(tmpdir, "input.webm")
         output_path = os.path.join(tmpdir, "output.wav")
@@ -115,14 +95,12 @@ def transcribe_audio(audio_bytes: bytes) -> str:
         with open(input_path, "wb") as f:
             f.write(audio_bytes)
 
-        # Convert to 16kHz mono WAV — same target as original resample to 16000
         subprocess.run(
             ["ffmpeg", "-y", "-i", input_path,
              "-ar", "16000", "-ac", "1", "-f", "wav", output_path],
             capture_output=True, check=True
         )
 
-        # Feed through Vosk — identical to original recognizer.AcceptWaveform loop
         rec = KaldiRecognizer(vosk_model, 16000)
         transcribed = []
 
@@ -133,9 +111,9 @@ def transcribe_audio(audio_bytes: bytes) -> str:
                 if not block:
                     break
                 if rec.AcceptWaveform(block):
-                    result = json.loads(rec.Result())
-                    if result.get("text"):
-                        transcribed.append(result["text"])
+                    r = json.loads(rec.Result())
+                    if r.get("text"):
+                        transcribed.append(r["text"])
 
         final = json.loads(rec.FinalResult())
         if final.get("text"):
@@ -155,10 +133,6 @@ def index():
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
-    """
-    Browser sends a complete audio recording.
-    Server transcribes with Vosk and returns the text.
-    """
     audio_bytes = request.data
     if not audio_bytes:
         return jsonify({"error": "No audio received"}), 400
@@ -169,8 +143,18 @@ def transcribe():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/chat", methods=["POST"])
-def chat():
+@app.route("/chat_stream", methods=["POST"])
+def chat_stream():
+    """
+    1. Gets full reply from Mistral
+    2. Splits into sentences
+    3. For each sentence: streams Opus audio chunks from Inworld
+       wrapped as JSON lines: {"type": "sentence_start", "text": "..."}
+                               {"type": "audio", "data": "<base64 opus chunk>"}
+                               {"type": "sentence_end"}
+    Browser starts playing the first sentence's audio immediately,
+    queues the rest, and resumes listening when all done.
+    """
     data      = request.get_json()
     user_text = data.get("message", "").strip()
     if not user_text:
@@ -182,26 +166,26 @@ def chat():
         response        = client.beta.conversations.start(agent_id=AGENT_ID, inputs=conversation_history)
         assistant_reply = response.outputs[0].content
         conversation_history.append({"role": "assistant", "content": assistant_reply})
-        return jsonify({"reply": assistant_reply})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+    sentences = split_sentences(assistant_reply)
 
-@app.route("/tts", methods=["POST"])
-def tts():
-    data = request.get_json()
-    text = data.get("text", "").strip()
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
-    try:
-        wav_bytes = synthesize_speech(text)
-        return Response(
-            wav_bytes,
-            mimetype="audio/wav",
-            headers={"Content-Disposition": "inline; filename=speech.wav"}
-        )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    @stream_with_context
+    def generate():
+        for sentence in sentences:
+            yield json.dumps({"type": "sentence_start", "text": sentence}) + "\n"
+            try:
+                for opus_chunk in stream_opus_chunks(sentence):
+                    yield json.dumps({
+                        "type": "audio",
+                        "data": base64.b64encode(opus_chunk).decode()
+                    }) + "\n"
+            except Exception:
+                pass
+            yield json.dumps({"type": "sentence_end"}) + "\n"
+
+    return Response(generate(), mimetype="application/x-ndjson")
 
 
 @app.route("/history", methods=["GET"])
