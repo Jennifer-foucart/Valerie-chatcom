@@ -6,7 +6,10 @@ import re
 import os
 import subprocess
 import tempfile
+import time
 
+import numpy as np
+import faiss
 import requests
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 from mistralai import Mistral
@@ -26,6 +29,16 @@ MODEL_ID  = "inworld-tts-1.5-max"
 
 VOSK_MODEL_PATH = os.environ.get("VOSK_MODEL_PATH", "models/vosk-model-small-fr-0.22")
 
+
+
+# Map of interview choice keys → RAG query
+INTERVIEW_TYPES = {
+    "motivational": "How the model should behave in case of a motivational interview?",
+    "behavioral":   "How the model should behave in case of a behavioral interview?",
+    "technical":    "How the model should behave in case of a technical interview?",
+    # Add more as needed
+}
+
 # =========================
 # INIT
 # =========================
@@ -35,10 +48,13 @@ app = Flask(
     template_folder=os.path.join(_BASE_DIR, "templates"),
     static_folder=os.path.join(_BASE_DIR, "static")
 )
-client      = Mistral(api_key=MISTRAL_API_KEY)
-vosk_model  = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
-conversation_history = []
+mistral_client = Mistral(api_key=MISTRAL_API_KEY)
+vosk_model     = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
+
+# Per-session state: keyed by session_id sent from the browser
+# Each entry: { "history": [...], "ready": bool }
+sessions = {}
 
 inworld_session = requests.Session()
 inworld_session.headers.update({
@@ -49,20 +65,61 @@ inworld_session.headers.update({
 
 
 # =========================
+# RAG
+# =========================
+
+def get_text_embedding(text: str) -> list:
+    resp = mistral_client.embeddings.create(model="mistral-embed", inputs=text)
+    return resp.data[0].embedding
+
+
+def build_rag_index(filepath="Modules.txt"):
+    chunks = []
+    current_chunk = []
+    with open(os.path.join(_BASE_DIR, filepath), "r", encoding="utf-8") as f:
+        for line in f:
+            if re.match(r'^\d+\.\s+', line):
+                if current_chunk:
+                    chunks.append("".join(current_chunk).strip())
+                    current_chunk = []
+            current_chunk.append(line)
+    if current_chunk:
+        chunks.append("".join(current_chunk).strip())
+
+    embeddings = []
+    for chunk in chunks:
+        embeddings.append(get_text_embedding(chunk))
+        time.sleep(1)
+    embeddings = np.array(embeddings)
+
+    index = faiss.IndexFlatL2(embeddings.shape[1])
+    index.add(embeddings)
+    return chunks, index
+
+
+def retrieve_system_prompt(question: str, k: int = 1) -> str:
+    q_emb = np.array([get_text_embedding(question)])
+    _, I  = _rag_index.search(q_emb, k=k)
+    retrieved = [_rag_chunks[i] for i in I.tolist()[0]]
+    return "\n\n".join(retrieved)
+
+
+# Build index once at startup
+print("Building RAG index…")
+_rag_chunks, _rag_index = build_rag_index("Modules.txt")
+print(f"RAG index ready — {len(_rag_chunks)} chunks.")
+
+
+# =========================
 # HELPERS
 # =========================
 
 def split_sentences(text: str):
-    """Split reply into sentences so TTS can start on the first one immediately."""
     parts = re.split(r'(?<=[.!?…])\s+', text.strip())
     return [p.strip() for p in parts if p.strip()]
 
 
 def stream_opus_chunks(text: str):
-    """
-    Call Inworld TTS with OGG_OPUS encoding and yield raw Ogg Opus bytes
-    as they arrive — no buffering, no conversion needed.
-    """
     payload = {
         "text": text,
         "voiceId": VOICE_ID,
@@ -87,7 +144,6 @@ def stream_opus_chunks(text: str):
 
 
 def transcribe_audio(audio_bytes: bytes) -> str:
-    """Convert browser audio → 16kHz WAV → Vosk transcription."""
     with tempfile.TemporaryDirectory() as tmpdir:
         input_path  = os.path.join(tmpdir, "input.webm")
         output_path = os.path.join(tmpdir, "output.wav")
@@ -105,7 +161,7 @@ def transcribe_audio(audio_bytes: bytes) -> str:
         transcribed = []
 
         with open(output_path, "rb") as wf:
-            wf.read(44)  # skip WAV header
+            wf.read(44)
             while True:
                 block = wf.read(4000)
                 if not block:
@@ -131,6 +187,36 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/start_session", methods=["POST"])
+def start_session():
+    """
+    Called when the user clicks an interview type button.
+    Body: { "session_id": "abc123", "interview_type": "motivational" }
+    Runs RAG for the chosen type, initialises conversation history with
+    the retrieved system prompt, and returns 200 when ready.
+    """
+    data           = request.get_json()
+    session_id     = data.get("session_id", "").strip()
+    interview_type = data.get("interview_type", "").strip()
+
+    if not session_id:
+        return jsonify({"error": "Missing session_id"}), 400
+    if interview_type not in INTERVIEW_TYPES:
+        return jsonify({"error": f"Unknown interview_type '{interview_type}'",
+                        "valid": list(INTERVIEW_TYPES.keys())}), 400
+
+    question      = INTERVIEW_TYPES[interview_type]
+    system_prompt = retrieve_system_prompt(question)
+
+    sessions[session_id] = {
+        "history": [{"role": "system", "content": system_prompt}],
+        "interview_type": interview_type,
+        "ready": True,
+    }
+
+    return jsonify({"status": "ready", "interview_type": interview_type})
+
+
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
     audio_bytes = request.data
@@ -146,26 +232,28 @@ def transcribe():
 @app.route("/chat_stream", methods=["POST"])
 def chat_stream():
     """
-    1. Gets full reply from Mistral
-    2. Splits into sentences
-    3. For each sentence: streams Opus audio chunks from Inworld
-       wrapped as JSON lines: {"type": "sentence_start", "text": "..."}
-                               {"type": "audio", "data": "<base64 opus chunk>"}
-                               {"type": "sentence_end"}
-    Browser starts playing the first sentence's audio immediately,
-    queues the rest, and resumes listening when all done.
+    Body: { "session_id": "abc123", "message": "user text" }
+    Requires /start_session to have been called first.
     """
-    data      = request.get_json()
-    user_text = data.get("message", "").strip()
+    data       = request.get_json()
+    session_id = data.get("session_id", "").strip()
+    user_text  = data.get("message", "").strip()
+
+    if not session_id or session_id not in sessions:
+        return jsonify({"error": "Session not found — call /start_session first"}), 400
     if not user_text:
         return jsonify({"error": "Empty message"}), 400
 
-    conversation_history.append({"role": "user", "content": user_text})
+    history = sessions[session_id]["history"]
+    history.append({"role": "user", "content": user_text})
 
     try:
-        response        = client.beta.conversations.start(agent_id=AGENT_ID, inputs=conversation_history)
-        assistant_reply = response.outputs[0].content
-        conversation_history.append({"role": "assistant", "content": assistant_reply})
+        response = mistral_client.chat.complete(
+            model=MISTRAL_MODEL,
+            messages=history,
+        )
+        assistant_reply = response.choices[0].message.content
+        history.append({"role": "assistant", "content": assistant_reply})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -190,12 +278,19 @@ def chat_stream():
 
 @app.route("/history", methods=["GET"])
 def get_history():
-    return jsonify(conversation_history)
+    session_id = request.args.get("session_id", "")
+    if session_id not in sessions:
+        return jsonify([])
+    # Strip the system message before returning to the browser
+    return jsonify([m for m in sessions[session_id]["history"] if m["role"] != "system"])
 
 
 @app.route("/reset", methods=["POST"])
 def reset_history():
-    conversation_history.clear()
+    data       = request.get_json()
+    session_id = data.get("session_id", "").strip()
+    if session_id in sessions:
+        del sessions[session_id]
     return jsonify({"status": "reset"})
 
 
