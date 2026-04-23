@@ -3,3 +3,5 @@ mistralai==1.12.1
 requests>=2.31
 gunicorn>=21.0
 vosk>=0.3.45
+faiss-cpu>=1.7
+numpy>=1.26
