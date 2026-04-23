@@ -231,6 +231,28 @@ def transcribe():
 
 @app.route("/chat_stream", methods=["POST"])
 def chat_stream():
+    import traceback
+    data       = request.get_json()
+    session_id = data.get("session_id", "").strip()
+    user_text  = data.get("message", "").strip()
+
+    if not session_id or session_id not in sessions:
+        return jsonify({"error": "Session not found — call /start_session first"}), 400
+    if not user_text:
+        return jsonify({"error": "Empty message"}), 400
+
+    history = sessions[session_id]["history"]
+    history.append({"role": "user", "content": user_text})
+
+    try:
+        response = mistral_client.chat.complete(
+            model=MISTRAL_MODEL,
+            messages=history,
+        )
+        assistant_reply = response.choices[0].message.content
+        history.append({"role": "assistant", "content": assistant_reply})
+    except Exception as e:
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
     """
     Body: { "session_id": "abc123", "message": "user text" }
     Requires /start_session to have been called first.
