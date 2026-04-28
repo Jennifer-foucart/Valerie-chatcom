@@ -34,41 +34,19 @@
             overflow: hidden;
         }
 
-        /* ── Header ── */
-        header {
-            width: 100%;
-            max-width: 520px;
-            padding: 28px 28px 18px;
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-            border-bottom: 1px solid var(--border);
-        }
+        header { width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
         header span { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2); }
-
-        #back-btn {
-            margin-left: 12px;
-            background: none; border: none; cursor: pointer;
-            font-family: 'DM Mono', monospace; font-size: .68rem;
-            letter-spacing: .1em; text-transform: uppercase;
-            color: var(--muted); transition: color .2s;
-        }
+        #back-btn { margin-left: 12px; background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
         #back-btn:hover { color: var(--accent); }
 
-        /* ── Portrait ── */
         #portrait-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
         .portrait-frame { position: relative; }
         .ring { border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .ring-outer { width: 260px; height: 260px; border: 2px solid var(--border); transition: border-color .3s; }
         .ring-outer.speaking { border-color: var(--accent-lt); animation: speakring 1.6s ease infinite; }
-
-        @keyframes speakring {
-            0%,100% { box-shadow: 0 0 0 0 rgba(196,154,108,.4); }
-            50%      { box-shadow: 0 0 0 14px rgba(196,154,108,0); }
-        }
-
+        @keyframes speakring { 0%,100% { box-shadow: 0 0 0 0 rgba(196,154,108,.4); } 50% { box-shadow: 0 0 0 14px rgba(196,154,108,0); } }
         .ring-inner { width: 240px; height: 240px; background: var(--cream); border: 1px solid var(--border); overflow: hidden; }
         .ring-inner img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
 
@@ -77,7 +55,6 @@
         .tdot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-lt); animation: bounce .9s ease infinite; }
         .tdot:nth-child(2) { animation-delay: .15s; }
         .tdot:nth-child(3) { animation-delay: .30s; }
-
         @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
 
         #status-label { font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); min-height: 1.2em; transition: color .3s; }
@@ -85,7 +62,6 @@
         #interim { font-family: 'Cormorant Garamond', serif; font-size: .95rem; font-style: italic; color: var(--muted); min-height: 1.4em; max-width: 400px; text-align: center; opacity: 0; transition: opacity .2s; }
         #interim.show { opacity: 1; }
 
-        /* ── Input bar ── */
         #input-bar { width: 100%; max-width: 520px; padding: 16px 28px 28px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); background: var(--paper); }
         #user-input { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; background: var(--cream); border: 1.5px solid var(--border); border-radius: 40px; padding: 10px 20px; outline: none; color: var(--ink); transition: border-color .2s; }
         #user-input::placeholder { color: var(--muted); }
@@ -97,30 +73,17 @@
         .btn-icon svg { pointer-events: none; }
         .btn-icon:disabled { opacity: .4; cursor: default; }
         #mic-btn.in-call { background: #fee2e2; border-color: var(--red); animation: callpulse 1.4s ease infinite; }
-
-        @keyframes callpulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.35); }
-            50%      { box-shadow: 0 0 0 9px rgba(239,68,68,0); }
-        }
+        @keyframes callpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.35); } 50% { box-shadow: 0 0 0 9px rgba(239,68,68,0); } }
 
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #3b0a0a; color: #fecaca; font-family: 'DM Mono', monospace; font-size: .75rem; padding: 8px 20px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .3s; }
         #toast.show { opacity: 1; }
 
-        /* ── Shared overlay page style ── */
-        .overlay-page {
-            position: fixed; inset: 0; z-index: 100;
-            background: var(--paper);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            padding: 40px 28px;
-            animation: fadeIn .5s ease both;
-        }
+        /* ── Overlay pages ── */
+        .overlay-page { position: fixed; inset: 0; z-index: 100; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; animation: fadeIn .5s ease both; }
         .overlay-page.hidden { animation: fadeOut .4s ease both; pointer-events: none; }
-
         @keyframes fadeIn  { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeOut { from { opacity:1; transform:translateY(0);      } to { opacity:0; transform:translateY(-12px); } }
 
-        /* ── Fiche card ── */
         .fiche { max-width: 480px; width: 100%; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 36px 40px; box-shadow: 0 8px 40px rgba(26,26,46,.08); }
         .fiche-header { margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 18px; }
         .fiche-tag { font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-lt); margin-bottom: 8px; }
@@ -133,55 +96,27 @@
         .fiche-section ul li { font-size: 1.05rem; font-weight: 300; line-height: 1.7; color: var(--ink); padding-left: 16px; position: relative; }
         .fiche-section ul li::before { content: "—"; position: absolute; left: 0; color: var(--accent-lt); }
 
-        /* ── Primary CTA button ── */
         .cta-btn { margin-top: 32px; width: 100%; max-width: 480px; padding: 14px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: .06em; background: var(--accent); color: var(--paper); border: none; border-radius: 40px; cursor: pointer; transition: background .2s, transform .1s; }
         .cta-btn:hover { background: var(--accent-lt); }
         .cta-btn:active { transform: scale(.98); }
+        .cta-btn:disabled { opacity: .5; cursor: default; }
 
-        /* ── Interview choice page ── */
+        /* ── Interview choice ── */
         .interview-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
-
-        .interview-btn {
-            width: 100%; padding: 18px 24px;
-            background: var(--cream); border: 1.5px solid var(--border);
-            border-radius: 12px; cursor: pointer;
-            display: flex; flex-direction: column; gap: 4px;
-            text-align: left;
-            transition: border-color .2s, box-shadow .2s, transform .1s;
-        }
+        .interview-btn { width: 100%; padding: 18px 24px; background: var(--cream); border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer; text-align: left; transition: border-color .2s, box-shadow .2s, transform .1s; }
         .interview-btn:hover { border-color: var(--accent-lt); box-shadow: 0 4px 20px rgba(139,94,60,.12); }
         .interview-btn:active { transform: scale(.98); }
         .interview-btn.selected { border-color: var(--accent); background: #f0e8de; }
+        .interview-btn .ib-label { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 400; color: var(--accent); display: block; }
 
-        .interview-btn .ib-label {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.15rem; font-weight: 400;
-            color: var(--accent);
-        }
-        .interview-btn .ib-desc {
-            font-family: 'DM Mono', monospace;
-            font-size: .65rem; letter-spacing: .1em;
-            text-transform: uppercase; color: var(--muted);
-        }
-
-        #choice-error {
-            font-family: 'DM Mono', monospace; font-size: .72rem;
-            color: var(--red); letter-spacing: .08em;
-            min-height: 1.2em; margin-top: 8px; text-align: center;
-        }
-
-        #start-loading {
-            font-family: 'DM Mono', monospace; font-size: .72rem;
-            letter-spacing: .12em; text-transform: uppercase;
-            color: var(--accent-lt); margin-top: 14px;
-            text-align: center; display: none;
-        }
+        #choice-error { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--red); letter-spacing: .08em; min-height: 1.2em; margin-top: 12px; text-align: center; }
+        #start-loading { font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-lt); margin-top: 14px; text-align: center; display: none; }
     </style>
 </head>
 
 <body>
 
-    <!-- ── Step 1 : Fiche patiente ── -->
+    <!-- Step 1: Fiche patiente -->
     <div id="welcome-page" class="overlay-page">
         <div class="fiche">
             <div class="fiche-header">
@@ -208,7 +143,7 @@
         <button class="cta-btn" id="next-btn">Choisir le type d'entretien →</button>
     </div>
 
-    <!-- ── Step 2 : Interview type selection ── -->
+    <!-- Step 2: Interview type -->
     <div id="choice-page" class="overlay-page" style="display:none">
         <div class="fiche">
             <div class="fiche-header">
@@ -216,23 +151,9 @@
                 <div class="fiche-title">Choisissez une approche</div>
             </div>
             <div class="fiche-section">
-                <div class="interview-grid">
-
-                    <button class="interview-btn" data-type="motivational">
-                        <span class="ib-label">Entretien motivationnel</span>
-                        <span class="ib-desc">Explorer les ambivalences, renforcer la motivation au changement</span>
-                    </button>
-
-                    <button class="interview-btn" data-type="behavioral">
-                        <span class="ib-label">Entretien comportemental</span>
-                        <span class="ib-desc">Identifier les comportements, habitudes et déclencheurs</span>
-                    </button>
-
-                    <button class="interview-btn" data-type="technical">
-                        <span class="ib-label">Entretien clinique structuré</span>
-                        <span class="ib-desc">Anamnèse systématique, symptômes, antécédents</span>
-                    </button>
-
+                <!-- Buttons injected here by /modules -->
+                <div class="interview-grid" id="interview-grid">
+                    <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)">Chargement…</div>
                 </div>
                 <div id="choice-error"></div>
                 <div id="start-loading">Préparation en cours…</div>
@@ -241,7 +162,7 @@
         <button class="cta-btn" id="start-btn">Commencer la consultation →</button>
     </div>
 
-    <!-- ── Main chat UI ── -->
+    <!-- Chat UI -->
     <header>
         <h1>Valérie</h1>
         <span>Chatcom · FR</span>
@@ -293,51 +214,29 @@
         let selectedInterviewType = null;
 
         /* ── State ── */
-        let inCall = false;
-        let isSpeaking = false;
-        let isProcessing = false;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let silenceLoop = null;
-        let audioStream = null;
-        let audioContext = null;
-        let analyser = null;
+        let inCall = false, isSpeaking = false, isProcessing = false;
+        let mediaRecorder = null, audioChunks = [], silenceLoop = null;
+        let audioStream = null, audioContext = null, analyser = null;
+        let audioQueue = [], isPlaying = false;
 
         /* ── Elements ── */
-        const inputEl      = document.getElementById("user-input");
-        const sendBtn      = document.getElementById("send-btn");
-        const micBtn       = document.getElementById("mic-btn");
-        const iconCall     = document.getElementById("icon-call");
-        const iconEndCall  = document.getElementById("icon-endcall");
-        const ringOuter    = document.getElementById("ring-outer");
-        const statusLabel  = document.getElementById("status-label");
-        const thinkingOvl  = document.getElementById("thinking-overlay");
-        const interimEl    = document.getElementById("interim");
-        const toast        = document.getElementById("toast");
+        const inputEl     = document.getElementById("user-input");
+        const sendBtn     = document.getElementById("send-btn");
+        const micBtn      = document.getElementById("mic-btn");
+        const iconCall    = document.getElementById("icon-call");
+        const iconEndCall = document.getElementById("icon-endcall");
+        const ringOuter   = document.getElementById("ring-outer");
+        const statusLabel = document.getElementById("status-label");
+        const thinkingOvl = document.getElementById("thinking-overlay");
+        const interimEl   = document.getElementById("interim");
+        const toast       = document.getElementById("toast");
 
         /* ── UI helpers ── */
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.add("show");
-            setTimeout(() => toast.classList.remove("show"), 3500);
-        }
-        function setStatus(text, active = false) {
-            statusLabel.textContent = text;
-            statusLabel.classList.toggle("active", active);
-        }
-        function setThinking(on) {
-            thinkingOvl.classList.toggle("show", on);
-            if (on) setStatus("réfléchit…", true);
-        }
-        function setSpeaking(on) {
-            isSpeaking = on;
-            ringOuter.classList.toggle("speaking", on);
-            if (on) { setStatus("parle…", true); setInterim(""); }
-        }
-        function setInterim(text) {
-            interimEl.textContent = text;
-            interimEl.classList.toggle("show", !!text);
-        }
+        function showToast(msg) { toast.textContent = msg; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 3500); }
+        function setStatus(text, active = false) { statusLabel.textContent = text; statusLabel.classList.toggle("active", active); }
+        function setThinking(on) { thinkingOvl.classList.toggle("show", on); if (on) setStatus("réfléchit…", true); }
+        function setSpeaking(on) { isSpeaking = on; ringOuter.classList.toggle("speaking", on); if (on) { setStatus("parle…", true); setInterim(""); } }
+        function setInterim(text) { interimEl.textContent = text; interimEl.classList.toggle("show", !!text); }
 
         /* ── Page transitions ── */
         function hidePage(id, then) {
@@ -349,34 +248,44 @@
                 if (then) then();
             }, { once: true });
         }
+        function showPage(id) { document.getElementById(id).style.display = "flex"; }
 
-        function showPage(id) {
-            const el = document.getElementById(id);
-            el.style.display = "flex";
+        /* ── Load module buttons from server ── */
+        async function loadModules() {
+            const grid = document.getElementById("interview-grid");
+            try {
+                const res  = await fetch("/modules");
+                const list = await res.json();  // [{key, label}, ...]
+                grid.innerHTML = "";
+                list.forEach(({ key, label }) => {
+                    const btn = document.createElement("button");
+                    btn.className    = "interview-btn";
+                    btn.dataset.type = key;
+                    btn.innerHTML    = `<span class="ib-label">${label}</span>`;
+                    btn.addEventListener("click", () => {
+                        document.querySelectorAll(".interview-btn").forEach(b => b.classList.remove("selected"));
+                        btn.classList.add("selected");
+                        selectedInterviewType = key;
+                        document.getElementById("choice-error").textContent = "";
+                    });
+                    grid.appendChild(btn);
+                });
+            } catch (e) {
+                grid.innerHTML = `<div style="color:var(--red);font-family:'DM Mono',monospace;font-size:.72rem">Erreur de chargement.</div>`;
+            }
         }
 
         /* ── Step 1 → Step 2 ── */
         document.getElementById("next-btn").addEventListener("click", () => {
-            hidePage("welcome-page", () => showPage("choice-page"));
+            hidePage("welcome-page", () => { showPage("choice-page"); loadModules(); });
         });
 
-        /* ── Interview type buttons ── */
-        document.querySelectorAll(".interview-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".interview-btn").forEach(b => b.classList.remove("selected"));
-                btn.classList.add("selected");
-                selectedInterviewType = btn.dataset.type;
-                document.getElementById("choice-error").textContent = "";
-            });
-        });
-
-        /* ── Step 2 → Chat: call /start_session ── */
+        /* ── Step 2 → Chat ── */
         document.getElementById("start-btn").addEventListener("click", async () => {
             if (!selectedInterviewType) {
                 document.getElementById("choice-error").textContent = "Veuillez choisir un type d'entretien.";
                 return;
             }
-
             const loadingEl = document.getElementById("start-loading");
             const startBtn  = document.getElementById("start-btn");
             loadingEl.style.display = "block";
@@ -386,20 +295,14 @@
                 const res = await fetch("/start_session", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        session_id: SESSION_ID,
-                        interview_type: selectedInterviewType
-                    })
+                    body: JSON.stringify({ session_id: SESSION_ID, interview_type: selectedInterviewType })
                 });
-
                 if (!res.ok) {
                     const err = await res.json();
                     document.getElementById("choice-error").textContent = err.error || "Erreur serveur.";
                     return;
                 }
-
-                hidePage("choice-page");   // no callback — chat UI already visible underneath
-
+                hidePage("choice-page");
             } catch (e) {
                 document.getElementById("choice-error").textContent = "Erreur réseau, réessayez.";
             } finally {
@@ -408,7 +311,7 @@
             }
         });
 
-        /* ── Back button: return to choice page ── */
+        /* ── Back button ── */
         document.getElementById("back-btn").addEventListener("click", () => {
             if (inCall) stopCall();
             fetch("/reset", {
@@ -417,26 +320,17 @@
                 body: JSON.stringify({ session_id: SESSION_ID })
             });
             selectedInterviewType = null;
-            document.querySelectorAll(".interview-btn").forEach(b => b.classList.remove("selected"));
-            document.getElementById("choice-error").textContent = "";
             showPage("choice-page");
+            loadModules();
         });
 
         /* ── Audio queue ── */
-        let audioQueue = [];
-        let isPlaying  = false;
-
-        function enqueueAndPlay(opusBlob) {
-            audioQueue.push(opusBlob);
+        function enqueueAndPlay(blob) {
+            audioQueue.push(blob);
             if (!isPlaying) playNext();
         }
-
         function playNext() {
-            if (audioQueue.length === 0) {
-                setSpeaking(false);
-                resumeListening();
-                return;
-            }
+            if (audioQueue.length === 0) { setSpeaking(false); resumeListening(); return; }
             isPlaying = true;
             const blob  = audioQueue.shift();
             const url   = URL.createObjectURL(blob);
@@ -454,8 +348,7 @@
             inputEl.value = "";
             setInterim("");
             setThinking(true);
-            audioQueue = [];
-            isPlaying  = false;
+            audioQueue = []; isPlaying = false;
 
             try {
                 const res = await fetch("/chat_stream", {
@@ -463,159 +356,93 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ session_id: SESSION_ID, message: text })
                 });
-
-                if (!res.ok) {
-                    setThinking(false);
-                    resumeListening();
-                    showToast("Erreur serveur.");
-                    return;
-                }
+                if (!res.ok) { setThinking(false); resumeListening(); showToast("Erreur serveur."); return; }
 
                 const reader  = res.body.getReader();
                 const decoder = new TextDecoder();
-                let buffer = "";
-                let currentChunks = [];
+                let buffer = "", currentChunks = [];
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split("\n");
                     buffer = lines.pop();
 
                     for (const line of lines) {
                         if (!line.trim()) continue;
-                        let msg;
-                        try { msg = JSON.parse(line); } catch { continue; }
-
-                        if (msg.type === "sentence_start") {
-                            setThinking(false);
-                            setSpeaking(true);
-                            currentChunks = [];
-                        } else if (msg.type === "audio") {
-                            const bytes = Uint8Array.from(atob(msg.data), c => c.charCodeAt(0));
-                            currentChunks.push(bytes);
-                        } else if (msg.type === "sentence_end") {
-                            if (currentChunks.length > 0) {
-                                const blob = new Blob(currentChunks, { type: "audio/ogg; codecs=opus" });
-                                enqueueAndPlay(blob);
-                            }
-                            currentChunks = [];
-                        }
+                        let msg; try { msg = JSON.parse(line); } catch { continue; }
+                        if (msg.type === "sentence_start") { setThinking(false); setSpeaking(true); currentChunks = []; }
+                        else if (msg.type === "audio") { const b = Uint8Array.from(atob(msg.data), c => c.charCodeAt(0)); currentChunks.push(b); }
+                        else if (msg.type === "sentence_end") { if (currentChunks.length) enqueueAndPlay(new Blob(currentChunks, { type: "audio/ogg; codecs=opus" })); currentChunks = []; }
                     }
                 }
-
-            } catch (e) {
-                setThinking(false);
-                resumeListening();
-                showToast("Erreur réseau.");
-            } finally {
-                isProcessing = false;
-            }
+            } catch (e) { setThinking(false); resumeListening(); showToast("Erreur réseau."); }
+            finally { isProcessing = false; }
         }
 
         /* ── Voice recording ── */
-        const SILENCE_THRESHOLD = 10;
-        const SILENCE_DURATION  = 1200;
+        const SILENCE_THRESHOLD = 10, SILENCE_DURATION = 1200;
 
         function startListening() {
             if (!inCall || isSpeaking || isProcessing) return;
-            setInterim("…");
-            setStatus("écoute…", true);
-            audioChunks = [];
-            mediaRecorder.start();
-
+            setInterim("…"); setStatus("écoute…", true);
+            audioChunks = []; mediaRecorder.start();
             const dataArray = new Uint8Array(analyser.fftSize);
-            let silentMs = 0;
-            let hasVoice = false;
-            const INTERVAL = 100;
-
+            let silentMs = 0, hasVoice = false;
             silenceLoop = setInterval(() => {
                 if (!inCall || isSpeaking) { clearInterval(silenceLoop); return; }
                 analyser.getByteTimeDomainData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i] - 128; sum += v * v; }
+                let sum = 0; for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i]-128; sum += v*v; }
                 const rms = Math.sqrt(sum / dataArray.length);
-
-                if (rms > SILENCE_THRESHOLD) {
-                    hasVoice = true; silentMs = 0; setInterim("🎤");
-                } else if (hasVoice) {
-                    silentMs += INTERVAL;
-                    if (silentMs >= SILENCE_DURATION) {
-                        clearInterval(silenceLoop);
-                        mediaRecorder.stop();
-                    }
-                }
-            }, INTERVAL);
+                if (rms > SILENCE_THRESHOLD) { hasVoice = true; silentMs = 0; setInterim("🎤"); }
+                else if (hasVoice) { silentMs += 100; if (silentMs >= SILENCE_DURATION) { clearInterval(silenceLoop); mediaRecorder.stop(); } }
+            }, 100);
         }
 
-        function resumeListening() {
-            if (!inCall) { setStatus("en attente"); return; }
-            setTimeout(startListening, 400);
-        }
+        function resumeListening() { if (!inCall) { setStatus("en attente"); return; } setTimeout(startListening, 400); }
 
-        /* ── Call control ── */
         async function startCall() {
             try {
                 audioStream  = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioContext = new AudioContext();
                 const source = audioContext.createMediaStreamSource(audioStream);
-                analyser     = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
+                analyser     = audioContext.createAnalyser(); analyser.fftSize = 2048;
                 source.connect(analyser);
-
                 mediaRecorder = new MediaRecorder(audioStream);
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                 mediaRecorder.onstop = async () => {
-                    if (!inCall || audioChunks.length === 0) return;
-                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-                    audioChunks = [];
-                    setInterim("…");
-                    setStatus("transcription…", true);
+                    if (!inCall || !audioChunks.length) return;
+                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType }); audioChunks = [];
+                    setInterim("…"); setStatus("transcription…", true);
                     try {
                         const res  = await fetch("/transcribe", { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: blob });
                         const data = await res.json();
-                        if (data.text) { setInterim(data.text); await sendMessage(data.text); }
-                        else resumeListening();
-                    } catch (e) { showToast("Erreur transcription."); resumeListening(); }
+                        if (data.text) { setInterim(data.text); await sendMessage(data.text); } else resumeListening();
+                    } catch { showToast("Erreur transcription."); resumeListening(); }
                 };
-
                 inCall = true;
                 micBtn.classList.add("in-call");
-                iconCall.style.display    = "none";
-                iconEndCall.style.display = "";
+                iconCall.style.display = "none"; iconEndCall.style.display = "";
                 startListening();
-            } catch (e) { showToast("Microphone non accessible."); }
+            } catch { showToast("Microphone non accessible."); }
         }
 
         function stopCall() {
-            inCall = false;
-            clearInterval(silenceLoop);
+            inCall = false; clearInterval(silenceLoop);
             if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
             if (audioStream)  audioStream.getTracks().forEach(t => t.stop());
             if (audioContext) audioContext.close();
-            audioChunks  = [];
-            audioQueue   = [];
-            isProcessing = false;
-            isPlaying    = false;
+            audioChunks = []; audioQueue = []; isProcessing = false; isPlaying = false;
             micBtn.classList.remove("in-call");
-            iconCall.style.display    = "";
-            iconEndCall.style.display = "none";
-            setSpeaking(false);
-            setThinking(false);
-            setInterim("");
-            setStatus("en attente");
-        }
-
-        function toggleCall() {
-            if (inCall) stopCall(); else startCall();
+            iconCall.style.display = ""; iconEndCall.style.display = "none";
+            setSpeaking(false); setThinking(false); setInterim(""); setStatus("en attente");
         }
 
         /* ── Events ── */
         sendBtn.addEventListener("click", () => sendMessage());
         inputEl.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
-        micBtn.addEventListener("click", toggleCall);
+        micBtn.addEventListener("click", () => { if (inCall) stopCall(); else startCall(); });
     </script>
 </body>
 </html>
