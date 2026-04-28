@@ -413,7 +413,6 @@ app = Flask(
 mistral_client = Mistral(api_key=MISTRAL_API_KEY)
 vosk_model     = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
-# Per-session state
 sessions = {}
 
 inworld_session = requests.Session()
@@ -503,7 +502,6 @@ def index():
 
 @app.route("/modules", methods=["GET"])
 def get_modules():
-    """Return module keys and labels to the frontend so buttons are driven by the dict."""
     return jsonify([
         {"key": k, "label": v["label"]}
         for k, v in INTERVIEW_MODULES.items()
@@ -523,12 +521,10 @@ def start_session():
                         "valid": list(INTERVIEW_MODULES.keys())}), 400
 
     system_prompt = INTERVIEW_MODULES[interview_type]["system"]
-
     sessions[session_id] = {
         "history": [{"role": "system", "content": system_prompt}],
         "interview_type": interview_type,
     }
-
     return jsonify({"status": "ready", "interview_type": interview_type})
 
 
@@ -546,7 +542,6 @@ def transcribe():
 
 @app.route("/chat_stream", methods=["POST"])
 def chat_stream():
-    import traceback
     data       = request.get_json()
     session_id = data.get("session_id", "").strip()
     user_text  = data.get("message", "").strip()
@@ -567,7 +562,9 @@ def chat_stream():
         assistant_reply = response.choices[0].message.content
         history.append({"role": "assistant", "content": assistant_reply})
     except Exception as e:
-        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+        tb = traceback.format_exc()
+        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
+        return jsonify({"error": str(e), "trace": tb}), 500
 
     sentences = split_sentences(assistant_reply)
 
@@ -581,11 +578,18 @@ def chat_stream():
                         "type": "audio",
                         "data": base64.b64encode(opus_chunk).decode()
                     }) + "\n"
-            except Exception:
-                pass
+            except Exception as e:
+                tb = traceback.format_exc()
+                app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
             yield json.dumps({"type": "sentence_end"}) + "\n"
 
     return Response(generate(), mimetype="application/x-ndjson")
+
+
+@app.route("/debug_last_error", methods=["GET"])
+def debug_last_error():
+    """Visit this URL in the browser after a 500 to see the full traceback."""
+    return jsonify(app.config.get("LAST_ERROR", "no error recorded yet"))
 
 
 @app.route("/history", methods=["GET"])
