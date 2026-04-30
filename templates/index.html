@@ -34,13 +34,20 @@
             overflow: hidden;
         }
 
-        header { width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
+        /* ── Header ── */
+        header {
+            width: 100%; max-width: 520px;
+            padding: 28px 28px 18px;
+            display: flex; align-items: baseline; gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
         header span { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2); }
         #back-btn { margin-left: 12px; background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
         #back-btn:hover { color: var(--accent); }
 
+        /* ── Portrait ── */
         #portrait-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
         .portrait-frame { position: relative; }
         .ring { border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -62,6 +69,7 @@
         #interim { font-family: 'Cormorant Garamond', serif; font-size: .95rem; font-style: italic; color: var(--muted); min-height: 1.4em; max-width: 400px; text-align: center; opacity: 0; transition: opacity .2s; }
         #interim.show { opacity: 1; }
 
+        /* ── Input bar ── */
         #input-bar { width: 100%; max-width: 520px; padding: 16px 28px 28px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); background: var(--paper); }
         #user-input { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; background: var(--cream); border: 1.5px solid var(--border); border-radius: 40px; padding: 10px 20px; outline: none; color: var(--ink); transition: border-color .2s; }
         #user-input::placeholder { color: var(--muted); }
@@ -75,6 +83,7 @@
         #mic-btn.in-call { background: #fee2e2; border-color: var(--red); animation: callpulse 1.4s ease infinite; }
         @keyframes callpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.35); } 50% { box-shadow: 0 0 0 9px rgba(239,68,68,0); } }
 
+        /* ── Toast ── */
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #3b0a0a; color: #fecaca; font-family: 'DM Mono', monospace; font-size: .75rem; padding: 8px 20px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .3s; }
         #toast.show { opacity: 1; }
 
@@ -84,6 +93,7 @@
         @keyframes fadeIn  { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeOut { from { opacity:1; transform:translateY(0);      } to { opacity:0; transform:translateY(-12px); } }
 
+        /* ── Fiche ── */
         .fiche { max-width: 480px; width: 100%; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 36px 40px; box-shadow: 0 8px 40px rgba(26,26,46,.08); }
         .fiche-header { margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 18px; }
         .fiche-tag { font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-lt); margin-bottom: 8px; }
@@ -96,6 +106,7 @@
         .fiche-section ul li { font-size: 1.05rem; font-weight: 300; line-height: 1.7; color: var(--ink); padding-left: 16px; position: relative; }
         .fiche-section ul li::before { content: "—"; position: absolute; left: 0; color: var(--accent-lt); }
 
+        /* ── CTA button ── */
         .cta-btn { margin-top: 32px; width: 100%; max-width: 480px; padding: 14px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: .06em; background: var(--accent); color: var(--paper); border: none; border-radius: 40px; cursor: pointer; transition: background .2s, transform .1s; }
         .cta-btn:hover { background: var(--accent-lt); }
         .cta-btn:active { transform: scale(.98); }
@@ -111,6 +122,21 @@
 
         #choice-error { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--red); letter-spacing: .08em; min-height: 1.2em; margin-top: 12px; text-align: center; }
         #start-loading { font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-lt); margin-top: 14px; text-align: center; display: none; }
+
+        /* ── Transcript viewer ── */
+        #transcript-page .fiche { max-width: 480px; display: flex; flex-direction: column; gap: 0; }
+        #transcript-box {
+            font-family: 'DM Mono', monospace; font-size: .75rem; line-height: 1.8;
+            color: var(--ink); background: var(--paper);
+            border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; margin-top: 16px;
+            max-height: 340px; overflow-y: auto;
+            white-space: pre-wrap; word-break: break-word;
+        }
+        #transcript-page .btn-row { display: flex; gap: 12px; margin-top: 20px; width: 100%; max-width: 480px; }
+        #transcript-page .btn-row .cta-btn { margin-top: 0; flex: 1; }
+        #transcript-page .btn-row .cta-btn.secondary { background: var(--cream); color: var(--accent); border: 1.5px solid var(--border); }
+        #transcript-page .btn-row .cta-btn.secondary:hover { background: #e8e0d4; }
     </style>
 </head>
 
@@ -151,7 +177,6 @@
                 <div class="fiche-title">Choisissez une approche</div>
             </div>
             <div class="fiche-section">
-                <!-- Buttons injected here by /modules -->
                 <div class="interview-grid" id="interview-grid">
                     <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)">Chargement…</div>
                 </div>
@@ -160,6 +185,24 @@
             </div>
         </div>
         <button class="cta-btn" id="start-btn">Commencer la consultation →</button>
+    </div>
+
+    <!-- Step 3: Transcript viewer (shown after call ends) -->
+    <div id="transcript-page" class="overlay-page" style="display:none">
+        <div class="fiche">
+            <div class="fiche-header">
+                <div class="fiche-tag">Fin de consultation</div>
+                <div class="fiche-title">Transcript</div>
+            </div>
+            <div class="fiche-section">
+                <div class="fiche-section-title">Historique de l'entretien</div>
+                <div id="transcript-box"></div>
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="cta-btn secondary" id="download-btn">⬇ Télécharger</button>
+            <button class="cta-btn" id="restart-btn">Nouvelle consultation →</button>
+        </div>
     </div>
 
     <!-- Chat UI -->
@@ -212,6 +255,7 @@
         /* ── Session ── */
         const SESSION_ID = crypto.randomUUID();
         let selectedInterviewType = null;
+        let lastTranscriptText    = "";
 
         /* ── State ── */
         let inCall = false, isSpeaking = false, isProcessing = false;
@@ -253,9 +297,10 @@
         /* ── Load module buttons from server ── */
         async function loadModules() {
             const grid = document.getElementById("interview-grid");
+            grid.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)">Chargement…</div>`;
             try {
                 const res  = await fetch("/modules");
-                const list = await res.json();  // [{key, label}, ...]
+                const list = await res.json();
                 grid.innerHTML = "";
                 list.forEach(({ key, label }) => {
                     const btn = document.createElement("button");
@@ -270,7 +315,7 @@
                     });
                     grid.appendChild(btn);
                 });
-            } catch (e) {
+            } catch {
                 grid.innerHTML = `<div style="color:var(--red);font-family:'DM Mono',monospace;font-size:.72rem">Erreur de chargement.</div>`;
             }
         }
@@ -290,7 +335,6 @@
             const startBtn  = document.getElementById("start-btn");
             loadingEl.style.display = "block";
             startBtn.disabled = true;
-
             try {
                 const res = await fetch("/start_session", {
                     method: "POST",
@@ -303,7 +347,7 @@
                     return;
                 }
                 hidePage("choice-page");
-            } catch (e) {
+            } catch {
                 document.getElementById("choice-error").textContent = "Erreur réseau, réessayez.";
             } finally {
                 loadingEl.style.display = "none";
@@ -311,7 +355,7 @@
             }
         });
 
-        /* ── Back button ── */
+        /* ── Back button → choice page ── */
         document.getElementById("back-btn").addEventListener("click", () => {
             if (inCall) stopCall();
             fetch("/reset", {
@@ -322,6 +366,49 @@
             selectedInterviewType = null;
             showPage("choice-page");
             loadModules();
+        });
+
+        /* ── Transcript: fetch, display, and optionally download ── */
+        async function showTranscript() {
+            try {
+                const res = await fetch("/end_session", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: SESSION_ID })
+                });
+                if (!res.ok) { showToast("Impossible de récupérer le transcript."); return; }
+                lastTranscriptText = await res.text();
+            } catch {
+                showToast("Erreur réseau — transcript non disponible.");
+                return;
+            }
+
+            document.getElementById("transcript-box").textContent = lastTranscriptText;
+            showPage("transcript-page");
+        }
+
+        function triggerDownload() {
+            if (!lastTranscriptText) return;
+            const blob = new Blob([lastTranscriptText], { type: "text/plain;charset=utf-8" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = "transcript.txt";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById("download-btn").addEventListener("click", triggerDownload);
+
+        document.getElementById("restart-btn").addEventListener("click", () => {
+            hidePage("transcript-page", () => { showPage("choice-page"); loadModules(); });
+            fetch("/reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ session_id: SESSION_ID })
+            });
+            selectedInterviewType = null;
+            lastTranscriptText    = "";
         });
 
         /* ── Audio queue ── */
@@ -368,17 +455,16 @@
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split("\n");
                     buffer = lines.pop();
-
                     for (const line of lines) {
                         if (!line.trim()) continue;
                         let msg; try { msg = JSON.parse(line); } catch { continue; }
-                        if (msg.type === "sentence_start") { setThinking(false); setSpeaking(true); currentChunks = []; }
-                        else if (msg.type === "audio") { const b = Uint8Array.from(atob(msg.data), c => c.charCodeAt(0)); currentChunks.push(b); }
-                        else if (msg.type === "sentence_end") { if (currentChunks.length) enqueueAndPlay(new Blob(currentChunks, { type: "audio/ogg; codecs=opus" })); currentChunks = []; }
+                        if (msg.type === "sentence_start")      { setThinking(false); setSpeaking(true); currentChunks = []; }
+                        else if (msg.type === "audio")          { currentChunks.push(Uint8Array.from(atob(msg.data), c => c.charCodeAt(0))); }
+                        else if (msg.type === "sentence_end")   { if (currentChunks.length) enqueueAndPlay(new Blob(currentChunks, { type: "audio/ogg; codecs=opus" })); currentChunks = []; }
                     }
                 }
-            } catch (e) { setThinking(false); resumeListening(); showToast("Erreur réseau."); }
-            finally { isProcessing = false; }
+            } catch { setThinking(false); resumeListening(); showToast("Erreur réseau."); }
+            finally  { isProcessing = false; }
         }
 
         /* ── Voice recording ── */
@@ -393,15 +479,20 @@
             silenceLoop = setInterval(() => {
                 if (!inCall || isSpeaking) { clearInterval(silenceLoop); return; }
                 analyser.getByteTimeDomainData(dataArray);
-                let sum = 0; for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i]-128; sum += v*v; }
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i]-128; sum += v*v; }
                 const rms = Math.sqrt(sum / dataArray.length);
                 if (rms > SILENCE_THRESHOLD) { hasVoice = true; silentMs = 0; setInterim("🎤"); }
                 else if (hasVoice) { silentMs += 100; if (silentMs >= SILENCE_DURATION) { clearInterval(silenceLoop); mediaRecorder.stop(); } }
             }, 100);
         }
 
-        function resumeListening() { if (!inCall) { setStatus("en attente"); return; } setTimeout(startListening, 400); }
+        function resumeListening() {
+            if (!inCall) { setStatus("en attente"); return; }
+            setTimeout(startListening, 400);
+        }
 
+        /* ── Call control ── */
         async function startCall() {
             try {
                 audioStream  = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -418,7 +509,8 @@
                     try {
                         const res  = await fetch("/transcribe", { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: blob });
                         const data = await res.json();
-                        if (data.text) { setInterim(data.text); await sendMessage(data.text); } else resumeListening();
+                        if (data.text) { setInterim(data.text); await sendMessage(data.text); }
+                        else resumeListening();
                     } catch { showToast("Erreur transcription."); resumeListening(); }
                 };
                 inCall = true;
@@ -429,7 +521,8 @@
         }
 
         function stopCall() {
-            inCall = false; clearInterval(silenceLoop);
+            inCall = false;
+            clearInterval(silenceLoop);
             if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
             if (audioStream)  audioStream.getTracks().forEach(t => t.stop());
             if (audioContext) audioContext.close();
@@ -437,6 +530,9 @@
             micBtn.classList.remove("in-call");
             iconCall.style.display = ""; iconEndCall.style.display = "none";
             setSpeaking(false); setThinking(false); setInterim(""); setStatus("en attente");
+
+            // Show transcript viewer
+            showTranscript();
         }
 
         /* ── Events ── */
