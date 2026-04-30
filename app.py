@@ -537,7 +537,40 @@ def transcribe():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/end_session", methods=["POST"])
+def end_session():
+    data       = request.get_json()
+    session_id = data.get("session_id", "").strip()
 
+    if session_id not in sessions:
+        return jsonify({"error": "Session not found"}), 400
+
+    history       = sessions[session_id]["history"]
+    interview_type = sessions[session_id].get("interview_type", "unknown")
+    label         = INTERVIEW_MODULES.get(interview_type, {}).get("label", interview_type)
+
+    lines = [
+        f"=== Transcript de consultation ===",
+        f"Module      : {label}",
+        f"Session     : {session_id}",
+        f"",
+    ]
+
+    for msg in history:
+        if msg["role"] == "system":
+            continue
+        speaker = "Médecin  " if msg["role"] == "user" else "Patiente "
+        lines.append(f"{speaker}: {msg['content']}")
+        lines.append("")
+
+    transcript = "\n".join(lines)
+    return Response(
+        transcript,
+        mimetype="text/plain; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename=transcript_{session_id[:8]}.txt"
+        }
+    )
 @app.route("/chat_stream", methods=["POST"])
 def chat_stream():
     data       = request.get_json()
