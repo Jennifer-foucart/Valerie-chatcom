@@ -18,6 +18,7 @@ MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "92sp6C59uxNWYZFCpMKdisQYpdK
 MISTRAL_MODEL   = "ft:mistral-medium-latest:e5b61ead:20260203:7fc94343"
 EVAL_MODEL      = "mistral-large-latest"
 
+
 INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OTdHdE1Hb0VseVM3RXhMVlNLYVFDMGcwOEZJbVF0eUY6OGhndjNhR3JhT0JyUXJqUWZWVXZqeWlTSFJRMDZSR3RTcllVRm9BS2VYUGFrTE9RTnpOQ0xteGlicTBzZGV3MQ==")
 INWORLD_TTS_URL = "https://api.inworld.ai/tts/v1/voice:stream"
 
@@ -411,7 +412,8 @@ app = Flask(
     static_folder=os.path.join(_BASE_DIR, "static")
 )
 
-mistral_client = Mistral(api_key=MISTRAL_API_KEY)
+mistral_client = Mistral(api_key=MISTRAL_API_KEY)   # for chat (fine-tuned model)
+eval_client    = Mistral(api_key=MISTRAL_API_KEY)   # for evaluation (large model)
 vosk_model     = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
 sessions = {}
@@ -644,7 +646,7 @@ def evaluate():
         return jsonify({"error": "Transcript is empty"}), 400
 
     try:
-        response = mistral_client.chat.complete(
+        response = eval_client.chat.complete(
             model=EVAL_MODEL,
             messages=[
                 {"role": "system", "content": EVAL_SYSTEM_PROMPT},
