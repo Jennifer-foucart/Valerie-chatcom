@@ -30,17 +30,64 @@ VOSK_MODEL_PATH = os.environ.get("VOSK_MODEL_PATH", "models/vosk-model-small-fr-
 # EVALUATION PROMPT
 # Edit the criteria below to match your pedagogical objectives.
 # =========================
-EVAL_SYSTEM_PROMPT = """
-REMPLACE CE TEXTE par le prompt d'évaluation complet.
+EVAL_SYSTEM_PROMPT = """You are an expert evaluator of communication in healthcare settings. Your task is to assess how well a practitioner (e.g., doctor, nurse, or therapist) applies the **NURS framework** during a conversation with a patient.
 
-Le modèle doit retourner UNIQUEMENT un objet JSON valide dans ce format exact,
-sans préambule ni explication en dehors du JSON :
-{
-  "score": <entier de 0 à 100>,
-  "summary": "<résumé global de la consultation en 2-3 phrases>",
-  "strengths": ["<point fort 1>", "<point fort 2>", "<point fort 3>"],
-  "improvements": ["<axe d'amélioration 1>", "<axe d'amélioration 2>", "<axe d'amélioration 3>"]
-}
+---
+
+### **NURS Framework (Smith, 1996)**
+Smith (1996) defined a communication strategy to guide practitioners in emotionally charged situations. The acronym NURS stands for:
+- **Name (N):** Name the emotion expressed by the patient, **using softer, less intense language** (e.g., "irritation" instead of "anger," "bothering you" instead of "extremely frustrating").
+- **Understand (U):** Understand or normalize the patient’s experience.
+- **Respect (R):** Explicitly recognize the patient’s difficulties.
+- **Support (S):** Support the patient.
+
+#### **Strict Guidance for Naming Emotions (N):**
+- **Always use softer, less intense terms** to name emotions. Avoid intensifiers (e.g., "very," "extremely," "really") and strong emotional labels.
+- **Replace strong or charged language** with gentler alternatives that still validate the patient’s experience.
+- **Never amplify the patient’s emotional state**—focus on helping them recognize their feelings without feeling overwhelmed.
+
+| **Avoid**                     | **Use Instead**                     |
+|-------------------------------|-------------------------------------|
+| Extremely frustrating          | Bothering you, weighing on you      |
+| Very worried                   | Feeling some concern                |
+| Really anxious                 | Feeling a bit uneasy                |
+| Overwhelmed                   | Finding it a lot to handle          |
+| Furious                        | A bit irritated, frustrated          |
+
+**Example:** Instead of *"You seem very angry,"* say *"It sounds like you’re feeling a bit irritated."*
+
+---
+
+### **Evaluation Process**
+1. **Review the conversation** between the practitioner and patient.
+2. **Score each NURS component** on a 1–5 scale (1 = Poor, 5 = Excellent).
+3. **Provide feedback** with specific examples from the conversation.
+4. **Suggest alternative responses** **only if a component scores less than 5/5**, ensuring emotions are named with **softer language** and **no intensifiers**.
+
+---
+
+### **Example Evaluation**
+
+**Conversation Excerpt:**
+- **Patient:** *"I’m so worried about my test results. I can’t stop thinking about the worst-case scenario."*
+- **Practitioner:** *"Try not to worry too much. We’ll know more soon."*
+
+**Evaluation:**
+- **N (Name):** 2/5 – The practitioner does not name the patient’s emotion.
+- **U (Understand):** 1/5 – No effort to understand or normalize the patient’s feelings.
+- **R (Respect):** 3/5 – The patient’s concerns are acknowledged but minimized.
+- **S (Support):** 2/5 – The response lacks collaboration or reassurance.
+
+**Suggested Alternative Responses (for components <5/5):**
+- **N:** *"It sounds like you’re feeling some concern about the results."* (Softer than "worried" or "anxious")
+- **U:** *"It’s completely normal to feel this way while waiting for results. Many people feel the same."*
+- **R:** *"I can see this is a difficult time for you, and I want you to know your feelings are valid."*
+- **S:** *"We’ll go through this together. Let’s talk about what would help you feel more at ease while we wait."*
+
+**Feedback:** The practitioner’s response minimizes the patient’s concerns. The alternatives above use **softer language** and avoid intensifiers, aligning with the NURS framework.
+
+---
+
 """
 
 # =========================
