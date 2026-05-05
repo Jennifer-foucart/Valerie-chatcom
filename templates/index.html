@@ -35,12 +35,7 @@
         }
 
         /* ── Header ── */
-        header {
-            width: 100%; max-width: 520px;
-            padding: 28px 28px 18px;
-            display: flex; align-items: baseline; gap: 12px;
-            border-bottom: 1px solid var(--border);
-        }
+        header { width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
         header span { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2); }
@@ -88,7 +83,7 @@
         #toast.show { opacity: 1; }
 
         /* ── Overlay pages ── */
-        .overlay-page { position: fixed; inset: 0; z-index: 100; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; animation: fadeIn .5s ease both; }
+        .overlay-page { position: fixed; inset: 0; z-index: 100; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; overflow-y: auto; animation: fadeIn .5s ease both; }
         .overlay-page.hidden { animation: fadeOut .4s ease both; pointer-events: none; }
         @keyframes fadeIn  { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeOut { from { opacity:1; transform:translateY(0);      } to { opacity:0; transform:translateY(-12px); } }
@@ -103,14 +98,19 @@
         .fiche-section-title { font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
         .fiche-section p { font-size: 1.05rem; font-weight: 300; line-height: 1.7; color: var(--ink); }
         .fiche-section ul { list-style: none; padding: 0; margin: 0; }
-        .fiche-section ul li { font-size: 1.05rem; font-weight: 300; line-height: 1.7; color: var(--ink); padding-left: 16px; position: relative; }
+        .fiche-section ul li { font-size: 1.05rem; font-weight: 300; line-height: 1.7; color: var(--ink); padding-left: 16px; position: relative; margin-bottom: 6px; }
         .fiche-section ul li::before { content: "—"; position: absolute; left: 0; color: var(--accent-lt); }
 
-        /* ── CTA button ── */
-        .cta-btn { margin-top: 32px; width: 100%; max-width: 480px; padding: 14px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: .06em; background: var(--accent); color: var(--paper); border: none; border-radius: 40px; cursor: pointer; transition: background .2s, transform .1s; }
+        /* ── CTA buttons ── */
+        .cta-btn { margin-top: 16px; width: 100%; max-width: 480px; padding: 14px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: .06em; background: var(--accent); color: var(--paper); border: none; border-radius: 40px; cursor: pointer; transition: background .2s, transform .1s; }
         .cta-btn:hover { background: var(--accent-lt); }
         .cta-btn:active { transform: scale(.98); }
         .cta-btn:disabled { opacity: .5; cursor: default; }
+        .cta-btn.secondary { background: var(--cream); color: var(--accent); border: 1.5px solid var(--border); }
+        .cta-btn.secondary:hover { background: #e8e0d4; }
+
+        .btn-row { display: flex; gap: 10px; width: 100%; max-width: 480px; flex-wrap: wrap; }
+        .btn-row .cta-btn { margin-top: 16px; flex: 1; min-width: 120px; }
 
         /* ── Interview choice ── */
         .interview-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
@@ -123,20 +123,16 @@
         #choice-error { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--red); letter-spacing: .08em; min-height: 1.2em; margin-top: 12px; text-align: center; }
         #start-loading { font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-lt); margin-top: 14px; text-align: center; display: none; }
 
-        /* ── Transcript viewer ── */
-        #transcript-page .fiche { max-width: 480px; display: flex; flex-direction: column; gap: 0; }
-        #transcript-box {
-            font-family: 'DM Mono', monospace; font-size: .75rem; line-height: 1.8;
-            color: var(--ink); background: var(--paper);
-            border: 1px solid var(--border); border-radius: 8px;
-            padding: 16px; margin-top: 16px;
-            max-height: 340px; overflow-y: auto;
-            white-space: pre-wrap; word-break: break-word;
-        }
-        #transcript-page .btn-row { display: flex; gap: 12px; margin-top: 20px; width: 100%; max-width: 480px; }
-        #transcript-page .btn-row .cta-btn { margin-top: 0; flex: 1; }
-        #transcript-page .btn-row .cta-btn.secondary { background: var(--cream); color: var(--accent); border: 1.5px solid var(--border); }
-        #transcript-page .btn-row .cta-btn.secondary:hover { background: #e8e0d4; }
+        /* ── Transcript ── */
+        #transcript-box { font-family: 'DM Mono', monospace; font-size: .75rem; line-height: 1.8; color: var(--ink); background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+
+        /* ── Evaluation card ── */
+        #eval-card { display: none; max-width: 480px; width: 100%; margin-top: 20px; }
+        #eval-score-title { font-size: 2rem; }
+        .score-high { color: var(--green); }
+        .score-mid  { color: var(--accent-lt); }
+        .score-low  { color: var(--red); }
+        #eval-loading { display: none; font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-lt); margin-top: 14px; text-align: center; }
     </style>
 </head>
 
@@ -187,7 +183,7 @@
         <button class="cta-btn" id="start-btn">Commencer la consultation →</button>
     </div>
 
-    <!-- Step 3: Transcript viewer (shown after call ends) -->
+    <!-- Step 3: Transcript + evaluation -->
     <div id="transcript-page" class="overlay-page" style="display:none">
         <div class="fiche">
             <div class="fiche-header">
@@ -199,9 +195,35 @@
                 <div id="transcript-box"></div>
             </div>
         </div>
+
         <div class="btn-row">
             <button class="cta-btn secondary" id="download-btn">⬇ Télécharger</button>
+            <button class="cta-btn secondary" id="evaluate-btn">★ Évaluer</button>
             <button class="cta-btn" id="restart-btn">Nouvelle consultation →</button>
+        </div>
+
+        <div id="eval-loading">Évaluation en cours…</div>
+
+        <!-- Evaluation result — hidden until evaluate is clicked -->
+        <div id="eval-card">
+            <div class="fiche">
+                <div class="fiche-header">
+                    <div class="fiche-tag">Évaluation automatique</div>
+                    <div class="fiche-title" id="eval-score-title">—</div>
+                </div>
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Résumé</div>
+                    <p id="eval-summary"></p>
+                </div>
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Points forts</div>
+                    <ul id="eval-strengths"></ul>
+                </div>
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Axes d'amélioration</div>
+                    <ul id="eval-improvements"></ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -294,7 +316,7 @@
         }
         function showPage(id) { document.getElementById(id).style.display = "flex"; }
 
-        /* ── Load module buttons from server ── */
+        /* ── Load module buttons ── */
         async function loadModules() {
             const grid = document.getElementById("interview-grid");
             grid.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)">Chargement…</div>`;
@@ -355,7 +377,7 @@
             }
         });
 
-        /* ── Back button → choice page ── */
+        /* ── Back button ── */
         document.getElementById("back-btn").addEventListener("click", () => {
             if (inCall) stopCall();
             fetch("/reset", {
@@ -368,7 +390,7 @@
             loadModules();
         });
 
-        /* ── Transcript: fetch, display, and optionally download ── */
+        /* ── Transcript ── */
         async function showTranscript() {
             try {
                 const res = await fetch("/end_session", {
@@ -382,8 +404,9 @@
                 showToast("Erreur réseau — transcript non disponible.");
                 return;
             }
-
             document.getElementById("transcript-box").textContent = lastTranscriptText;
+            document.getElementById("eval-card").style.display    = "none";
+            document.getElementById("eval-loading").style.display = "none";
             showPage("transcript-page");
         }
 
@@ -392,16 +415,13 @@
             const blob = new Blob([lastTranscriptText], { type: "text/plain;charset=utf-8" });
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement("a");
-            a.href     = url;
-            a.download = "transcript.txt";
-            a.click();
+            a.href = url; a.download = "transcript.txt"; a.click();
             URL.revokeObjectURL(url);
         }
 
         document.getElementById("download-btn").addEventListener("click", triggerDownload);
 
         document.getElementById("restart-btn").addEventListener("click", () => {
-            hidePage("transcript-page", () => { showPage("choice-page"); loadModules(); });
             fetch("/reset", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -409,6 +429,55 @@
             });
             selectedInterviewType = null;
             lastTranscriptText    = "";
+            hidePage("transcript-page", () => { showPage("choice-page"); loadModules(); });
+        });
+
+        /* ── Evaluation ── */
+        document.getElementById("evaluate-btn").addEventListener("click", async () => {
+            const btn       = document.getElementById("evaluate-btn");
+            const loadingEl = document.getElementById("eval-loading");
+            btn.disabled = true;
+            loadingEl.style.display = "block";
+            document.getElementById("eval-card").style.display = "none";
+
+            try {
+                const res  = await fetch("/evaluate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: SESSION_ID })
+                });
+                const data = await res.json();
+                if (data.error) { showToast("Erreur : " + data.error); return; }
+
+                // Score
+                const scoreEl = document.getElementById("eval-score-title");
+                scoreEl.textContent = `Score : ${data.score} / 100`;
+                scoreEl.className   = "fiche-title " + (
+                    data.score >= 75 ? "score-high" :
+                    data.score >= 50 ? "score-mid"  : "score-low"
+                );
+
+                // Summary
+                document.getElementById("eval-summary").textContent = data.summary;
+
+                // Strengths
+                const strengthsEl = document.getElementById("eval-strengths");
+                strengthsEl.innerHTML = "";
+                (data.strengths || []).forEach(s => {
+                    const li = document.createElement("li"); li.textContent = s; strengthsEl.appendChild(li);
+                });
+
+                // Improvements
+                const improvEl = document.getElementById("eval-improvements");
+                improvEl.innerHTML = "";
+                (data.improvements || []).forEach(s => {
+                    const li = document.createElement("li"); li.textContent = s; improvEl.appendChild(li);
+                });
+
+                document.getElementById("eval-card").style.display = "block";
+
+            } catch { showToast("Erreur réseau — évaluation impossible."); }
+            finally  { btn.disabled = false; loadingEl.style.display = "none"; }
         });
 
         /* ── Audio queue ── */
@@ -433,8 +502,7 @@
             if (!text || isProcessing) return;
             isProcessing = true;
             inputEl.value = "";
-            setInterim("");
-            setThinking(true);
+            setInterim(""); setThinking(true);
             audioQueue = []; isPlaying = false;
 
             try {
@@ -458,7 +526,7 @@
                     for (const line of lines) {
                         if (!line.trim()) continue;
                         let msg; try { msg = JSON.parse(line); } catch { continue; }
-                        if (msg.type === "sentence_start")      { setThinking(false); setSpeaking(true); currentChunks = []; }
+                        if      (msg.type === "sentence_start") { setThinking(false); setSpeaking(true); currentChunks = []; }
                         else if (msg.type === "audio")          { currentChunks.push(Uint8Array.from(atob(msg.data), c => c.charCodeAt(0))); }
                         else if (msg.type === "sentence_end")   { if (currentChunks.length) enqueueAndPlay(new Blob(currentChunks, { type: "audio/ogg; codecs=opus" })); currentChunks = []; }
                     }
@@ -468,22 +536,30 @@
         }
 
         /* ── Voice recording ── */
-        const SILENCE_THRESHOLD = 5, SILENCE_DURATION = 2000;
+        const SILENCE_THRESHOLD = 4;
+        const SILENCE_DURATION  = 3000;
 
         function startListening() {
             if (!inCall || isSpeaking || isProcessing) return;
             setInterim("…"); setStatus("écoute…", true);
             audioChunks = []; mediaRecorder.start();
             const dataArray = new Uint8Array(analyser.fftSize);
-            let silentMs = 0, hasVoice = false;
+            let silentMs = 0, hasVoice = false, smoothedRms = 0;
+
             silenceLoop = setInterval(() => {
                 if (!inCall || isSpeaking) { clearInterval(silenceLoop); return; }
                 analyser.getByteTimeDomainData(dataArray);
                 let sum = 0;
-                for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i]-128; sum += v*v; }
+                for (let i = 0; i < dataArray.length; i++) { const v = dataArray[i] - 128; sum += v * v; }
                 const rms = Math.sqrt(sum / dataArray.length);
-                if (rms > SILENCE_THRESHOLD) { hasVoice = true; silentMs = 0; setInterim("🎤"); }
-                else if (hasVoice) { silentMs += 100; if (silentMs >= SILENCE_DURATION) { clearInterval(silenceLoop); mediaRecorder.stop(); } }
+                smoothedRms = smoothedRms * 0.85 + rms * 0.15;
+
+                if (smoothedRms > SILENCE_THRESHOLD) {
+                    hasVoice = true; silentMs = 0; setInterim("🎤");
+                } else if (hasVoice) {
+                    silentMs += 100;
+                    if (silentMs >= SILENCE_DURATION) { clearInterval(silenceLoop); mediaRecorder.stop(); }
+                }
             }, 100);
         }
 
@@ -530,8 +606,6 @@
             micBtn.classList.remove("in-call");
             iconCall.style.display = ""; iconEndCall.style.display = "none";
             setSpeaking(false); setThinking(false); setInterim(""); setStatus("en attente");
-
-            // Show transcript viewer
             showTranscript();
         }
 
