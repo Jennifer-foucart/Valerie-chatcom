@@ -439,13 +439,18 @@
             btn.disabled = true;
             loadingEl.style.display = "block";
             document.getElementById("eval-card").style.display = "none";
+            const controller = new AbortController();
+const timeoutId  = setTimeout(() => controller.abort(), 110000); // 110s
 
             try {
-                const res  = await fetch("/evaluate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ session_id: SESSION_ID })
-                });
+                
+const res = await fetch("/evaluate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: SESSION_ID }),
+    signal: controller.signal
+});
+clearTimeout(timeoutId);
                 const data = await res.json();
                 if (data.error) { showToast("Erreur : " + data.error); return; }
 
