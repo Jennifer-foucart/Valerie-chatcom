@@ -412,7 +412,9 @@ app = Flask(
     static_folder=os.path.join(_BASE_DIR, "static")
 )
 
-mistral_client = Mistral(api_key=MISTRAL_API_KEY)
+mistral_client = Mistral(api_key=MISTRAL_API_KEY)   # chat model
+eval_client    = Mistral(api_key=MISTRAL_API_KEY)   # evaluation model
+
 vosk_model     = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
 sessions = {}
@@ -645,21 +647,19 @@ def evaluate():
         return jsonify({"error": "Transcript is empty"}), 400
 
     try:
-        response = mistral_client.chat.complete(
+        response = eval_client.chat.complete(
             model=EVAL_MODEL,
             messages=[
                 {"role": "system", "content": EVAL_SYSTEM_PROMPT},
                 {"role": "user",   "content": f"Voici le transcript de la consultation à évaluer :\n\n{transcript_text}"}
             ]
         )
-        raw = response.choices[0].message.content.strip()
-        raw = re.sub(r"^```json\s*|^```\s*|```$", "", raw, flags=re.MULTILINE).strip()
-        result = json.loads(raw)
-        return jsonify(result)
-    except json.JSONDecodeError:
-        return jsonify({"error": "Réponse JSON invalide", "raw": raw}), 500
+        feedback = response.choices[0].message.content.strip()
+        return jsonify({"feedback": feedback})
     except Exception as e:
-        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+        tb = traceback.format_exc()
+        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
+        return jsonify({"error": str(e), "trace": tb}), 500
 
 
 @app.route("/debug_last_error", methods=["GET"])
