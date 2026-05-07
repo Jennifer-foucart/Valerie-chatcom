@@ -124,14 +124,11 @@
         #start-loading { font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-lt); margin-top: 14px; text-align: center; display: none; }
 
         /* ── Transcript ── */
-        #transcript-box { font-family: 'DM Mono', monospace; font-size: .75rem; line-height: 1.8; color: var(--ink); background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+        #transcript-box { font-family: 'DM Mono', monospace; font-size: .75rem; line-height: 1.8; color: var(--ink); background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; max-height: 260px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
 
-        /* ── Evaluation card ── */
+        /* ── Evaluation ── */
         #eval-card { display: none; max-width: 480px; width: 100%; margin-top: 20px; }
-        #eval-score-title { font-size: 2rem; }
-        .score-high { color: var(--green); }
-        .score-mid  { color: var(--accent-lt); }
-        .score-low  { color: var(--red); }
+        #eval-feedback { font-family: 'Cormorant Garamond', serif; font-size: 1rem; line-height: 1.8; color: var(--ink); white-space: pre-wrap; word-break: break-word; }
         #eval-loading { display: none; font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-lt); margin-top: 14px; text-align: center; }
     </style>
 </head>
@@ -204,24 +201,14 @@
 
         <div id="eval-loading">Évaluation en cours…</div>
 
-        <!-- Evaluation result — hidden until evaluate is clicked -->
         <div id="eval-card">
             <div class="fiche">
                 <div class="fiche-header">
                     <div class="fiche-tag">Évaluation automatique</div>
-                    <div class="fiche-title" id="eval-score-title">—</div>
+                    <div class="fiche-title">Feedback</div>
                 </div>
                 <div class="fiche-section">
-                    <div class="fiche-section-title">Résumé</div>
-                    <p id="eval-summary"></p>
-                </div>
-                <div class="fiche-section">
-                    <div class="fiche-section-title">Points forts</div>
-                    <ul id="eval-strengths"></ul>
-                </div>
-                <div class="fiche-section">
-                    <div class="fiche-section-title">Axes d'amélioration</div>
-                    <ul id="eval-improvements"></ul>
+                    <div id="eval-feedback"></div>
                 </div>
             </div>
         </div>
@@ -407,6 +394,7 @@
             document.getElementById("transcript-box").textContent = lastTranscriptText;
             document.getElementById("eval-card").style.display    = "none";
             document.getElementById("eval-loading").style.display = "none";
+            document.getElementById("eval-feedback").textContent  = "";
             showPage("transcript-page");
         }
 
@@ -438,51 +426,37 @@
             const loadingEl = document.getElementById("eval-loading");
             btn.disabled = true;
             loadingEl.style.display = "block";
-            document.getElementById("eval-card").style.display = "none";
-            const controller = new AbortController();
-const timeoutId  = setTimeout(() => controller.abort(), 110000); // 110s
+            document.getElementById("eval-card").style.display   = "none";
+            document.getElementById("eval-feedback").textContent = "";
 
             try {
-                
-const res = await fetch("/evaluate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session_id: SESSION_ID }),
-    signal: controller.signal
-});
-clearTimeout(timeoutId);
+                const controller = new AbortController();
+                const timeoutId  = setTimeout(() => controller.abort(), 110000);
+
+                const res = await fetch("/evaluate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: SESSION_ID }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 const data = await res.json();
                 if (data.error) { showToast("Erreur : " + data.error); return; }
 
-                // Score
-                const scoreEl = document.getElementById("eval-score-title");
-                scoreEl.textContent = `Score : ${data.score} / 100`;
-                scoreEl.className   = "fiche-title " + (
-                    data.score >= 75 ? "score-high" :
-                    data.score >= 50 ? "score-mid"  : "score-low"
-                );
+                document.getElementById("eval-feedback").textContent = data.feedback;
+                document.getElementById("eval-card").style.display   = "block";
 
-                // Summary
-                document.getElementById("eval-summary").textContent = data.summary;
-
-                // Strengths
-                const strengthsEl = document.getElementById("eval-strengths");
-                strengthsEl.innerHTML = "";
-                (data.strengths || []).forEach(s => {
-                    const li = document.createElement("li"); li.textContent = s; strengthsEl.appendChild(li);
-                });
-
-                // Improvements
-                const improvEl = document.getElementById("eval-improvements");
-                improvEl.innerHTML = "";
-                (data.improvements || []).forEach(s => {
-                    const li = document.createElement("li"); li.textContent = s; improvEl.appendChild(li);
-                });
-
-                document.getElementById("eval-card").style.display = "block";
-
-            } catch { showToast("Erreur réseau — évaluation impossible."); }
-            finally  { btn.disabled = false; loadingEl.style.display = "none"; }
+            } catch (e) {
+                if (e.name === "AbortError") {
+                    showToast("L'évaluation prend trop de temps — réessayez.");
+                } else {
+                    showToast("Erreur réseau — évaluation impossible.");
+                }
+            } finally {
+                btn.disabled = false;
+                loadingEl.style.display = "none";
+            }
         });
 
         /* ── Audio queue ── */
