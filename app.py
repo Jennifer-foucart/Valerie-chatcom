@@ -411,6 +411,35 @@ app = Flask(
     static_folder=os.path.join(_BASE_DIR, "static")
 )
 
+
+ALLOWED_ORIGINS = {
+    "https://ulb-clientdev.edunao.com",
+    "https://valerie-chatcom-uujl.onrender.com",
+}
+
+
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        origin = request.headers.get("Origin", "")
+        resp = app.make_default_options_response()
+        if origin in ALLOWED_ORIGINS:
+            resp.headers["Access-Control-Allow-Origin"] = origin
+            resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return resp
+
+
+@app.after_request
+def add_cors(response):
+    origin = request.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Vary"] = "Origin"
+    return response
+
 mistral_client = Mistral(api_key=MISTRAL_API_KEY)   # chat model
 eval_client    = Mistral(api_key=MISTRAL_API_KEY)   # evaluation model
 
