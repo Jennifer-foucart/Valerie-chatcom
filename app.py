@@ -15,8 +15,8 @@ from vosk import Model, KaldiRecognizer
 # CONFIG
 # =========================
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "92sp6C59uxNWYZFCpMKdisQYpdKhTD7i")
-MISTRAL_MODEL   = "mistral-large-latest"
-EVAL_MODEL      = "mistral-large-latest"
+MISTRAL_MODEL   = "mistral-medium-latest"
+EVAL_MODEL      = "mistral-medium-latest"
 
 INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OTdHdE1Hb0VseVM3RXhMVlNLYVFDMGcwOEZJbVF0eUY6OGhndjNhR3JhT0JyUXJqUWZWVXZqeWlTSFJRMDZSR3RTcllVRm9BS2VYUGFrTE9RTnpOQ0xteGlicTBzZGV3MQ==")
 INWORLD_TTS_URL = "https://api.inworld.ai/tts/v1/voice:stream"
