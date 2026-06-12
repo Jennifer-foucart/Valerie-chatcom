@@ -342,7 +342,6 @@ RÈGLES ABSOLUES :
 9. Ne donne jamais de diagnostic ni de conseil médical.
 10. Maximum 3 phrases par réponse, quel que soit l'état émotionnel.
 11. S'il n'y a rien à dire : [sigh]"""
-"""
         ),
     },
     # Add more modules here:
