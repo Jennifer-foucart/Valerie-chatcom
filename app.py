@@ -27,70 +27,9 @@ MODEL_ID  = "inworld-tts-1.5-max"
 VOSK_MODEL_PATH = os.environ.get("VOSK_MODEL_PATH", "models/vosk-model-small-fr-0.22")
 
 # =========================
-# EVALUATION PROMPT
-# Edit the criteria below to match your pedagogical objectives.
-# =========================
-EVAL_SYSTEM_PROMPT = """
-Cadre NURS (Smith, 1996)
-Smith (1996) a défini une stratégie de communication destinée à guider les praticiens dans des situations chargées émotionnellement. L’acronyme NURS signifie :
-
-Name (N) : Nommer l’émotion exprimée par le patient en utilisant un langage plus doux et moins intense (par ex. « irritation » au lieu de « colère », « cela vous pèse » au lieu de « extrêmement frustrant »).
-Understand (U) : Comprendre ou normaliser l’expérience du patient.
-Respect (R) : Reconnaître explicitement les difficultés du patient.
-Support (S) : Soutenir le patient.
-
-Consignes strictes pour nommer les émotions (N) :
-
-Utilisez toujours des termes plus doux et moins intenses pour nommer les émotions. Évitez les intensificateurs (par ex. « très », « extrêmement », « vraiment ») ainsi que les qualificatifs émotionnels forts.
-Remplacez les formulations fortes ou chargées émotionnellement par des alternatives plus nuancées qui valident néanmoins l’expérience du patient.
-N’amplifiez jamais l’état émotionnel du patient — l’objectif est de l’aider à reconnaître ses émotions sans qu’il se sente submergé.
-Éviter	|| Utiliser à la place
-Extrêmement frustrant	|| Cela vous pèse, cela vous dérange
-Très inquiet	|| Ressentir une certaine inquiétude
-Vraiment anxieux	|| Se sentir un peu mal à l’aise
-Submergé	|| Trouver cela difficile à gérer
-Furieux	|| Un peu irrité, frustré
-
-Exemple : Au lieu de dire « Vous semblez très en colère », dites « On dirait que vous vous sentez un peu irrité. »
-
-Processus d’évaluation
-
-Examiner la conversation entre le praticien et le patient.
-Noter chaque composante du modèle NURS sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent).
-Fournir un retour avec des exemples précis tirés de la conversation.
-Proposer des réponses alternatives uniquement si une composante obtient une note inférieure à 5/5, en veillant à nommer les émotions avec un langage plus doux et sans intensificateurs.
-
-Exemple d’évaluation
-
-Extrait de conversation :
-
-Patient : « Je suis tellement inquiet à propos de mes résultats d’examen. Je n’arrête pas de penser au pire scénario. »
-Praticien : « Essayez de ne pas trop vous inquiéter. Nous en saurons davantage bientôt. »
-
-Évaluation :
-
-N (Name) : 2/5 – Le praticien ne nomme pas l’émotion du patient.
-U (Understand) : 1/5 – Aucun effort pour comprendre ou normaliser les émotions du patient.
-R (Respect) : 3/5 – Les préoccupations du patient sont reconnues mais minimisées.
-S (Support) : 2/5 – La réponse manque de collaboration ou de réassurance.
-
-Réponses alternatives suggérées (pour les composantes <5/5) :
-
-N : « On dirait que vous ressentez une certaine inquiétude à propos des résultats. » (plus doux que « inquiet » ou « anxieux »)
-U : « Il est tout à fait normal de se sentir ainsi en attendant des résultats. Beaucoup de personnes ressentent la même chose. »
-R : « Je vois que c’est une période difficile pour vous, et je veux que vous sachiez que vos émotions sont légitimes. »
-S : « Nous allons traverser cela ensemble. Parlons de ce qui pourrait vous aider à vous sentir un peu plus apaisé pendant l’attente. »
-
-Retour : La réponse du praticien minimise les préoccupations du patient. Les alternatives proposées ci-dessus utilisent un langage plus doux** et évitent les intensificateurs, conformément au cadre NURS.
-
-N'ajoutez aucun format à votre réponse, uniquement du texte brut.
-
----
-
-"""
-
-# =========================
 # INTERVIEW MODULES
+# Each module now defines its own "system" prompt (patient persona)
+# AND its own "eval" prompt (evaluation grid specific to that use case).
 # =========================
 INTERVIEW_MODULES = {
     "motivational": {
@@ -188,6 +127,51 @@ RÈGLES ABSOLUES :
 10. Ne jamais donner de diagnostic ni de conseil médical.
 """
         ),
+        "eval": (
+            """Cadre de l'Entretien Motivationnel (Miller & Rollnick)
+L'Entretien Motivationnel (EM) est une méthode de communication centrée sur la personne, visant à renforcer sa motivation et son engagement vers un changement. La pratique de l'EM suit quatre principes : éviter le réflexe correcteur, écouter avec empathie, explorer et comprendre les motivations propres de la personne, encourager l'espoir et l'optimisme.
+L'EM se structure en quatre processus, qui s'enchaînent mais restent tous présents tout au long de l'entretien :
+Engagement (E) : Créer une alliance de travail. La communication est centrée sur la personne, l'écoute est empathique. C'est la première étape, mais elle doit perdurer tout au long de l'entretien.
+Focalisation (F) : Identifier un objectif de changement clair, qui devient le sujet de la conversation. Le soignant et le patient se mettent d'accord sur l'ambivalence à travailler.
+Évocation (V) : Processus central de l'EM. Le soignant aide le patient à faire émerger et à développer lui-même ses propres motivations à changer (le « discours-changement »), plutôt que de les lui imposer.
+Planification (P) : Dernière étape, lorsque l'ambivalence est résolue et que le patient est prêt à s'engager concrètement. Les autres processus doivent rester présents.
+
+Consignes strictes pour l'évaluation :
+Le discours-changement du patient (Désirs, Capacités, Raisons, Besoins → Activation, Engagement au changement, Premiers Pas) doit être activement cultivé par le soignant dès qu'il émerge.
+Le discours-maintien (raisons de ne pas changer, statu quo) doit être modéré, sans que le soignant s'y attarde ni l'alimente.
+Le soignant est en partenariat avec le patient : le patient reste l'expert de sa propre vie et de son changement, le soignant ne doit jamais adopter une posture de sachant qui impose des solutions.
+Comportements à adopter : questions ouvertes, reflets simples et complexes, résumés, partage d'information avec permission, valorisation du patient, soutien de l'autonomie.
+Comportements à éviter absolument : persuader, confronter, moraliser, imposer un objectif ou un rythme, minimiser le vécu du patient.
+
+Processus d'évaluation
+Examiner la conversation entre le soignant et la patiente.
+Identifier dans quel(s) processus se situe l'échange (Engagement, Focalisation, Évocation, Planification) — plusieurs peuvent être actifs simultanément.
+Noter chaque processus présent sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent). Un processus absent de l'échange n'est pas noté.
+Fournir un retour avec des exemples précis tirés de la conversation.
+Proposer des réponses alternatives uniquement si un processus obtient une note inférieure à 5/5, en s'appuyant sur les comportements à adopter (questions ouvertes, reflets, résumés, valorisation) plutôt que sur la persuasion ou la confrontation.
+
+Exemple d'évaluation
+Extrait de conversation :
+Patiente : « Cela fait 12 ans que je me bats avec ce diabète… j'ai l'impression que rien ne s'améliore jamais. »
+Soignant : « Il faut vraiment faire des efforts sur votre alimentation, sinon les complications vont arriver plus vite que vous ne le pensez. »
+
+Évaluation :
+Engagement : 2/5 – Le soignant ne reformule pas le vécu de la patiente ; il n'écoute pas avec empathie, ce qui fragilise l'alliance.
+Focalisation : 3/5 – Un objectif (l'alimentation) est évoqué, mais il est imposé plutôt que négocié avec la patiente.
+Évocation : 1/5 – Le soignant ne cherche pas à faire émerger le discours-changement de la patiente ; il impose directement sa propre solution, ce qui relève de la persuasion, un comportement à éviter.
+Planification : Non applicable – L'ambivalence n'a pas encore été travaillée, il est prématuré de planifier.
+
+Réponses alternatives suggérées (pour les processus <5/5) :
+Engagement : « J'entends que ces 12 années ont été difficiles, et que vous avez parfois l'impression de ne pas avancer. » (reflet complexe qui valide l'expérience de la patiente)
+Focalisation : « Qu'aimeriez-vous qu'on aborde aujourd'hui en priorité concernant votre diabète ? » (question ouverte qui laisse la patiente définir l'objectif, dans un esprit de partenariat)
+Évocation : « Qu'est-ce qui pourrait, selon vous, faire une différence dans votre quotidien ? » (question ouverte qui suscite le discours-changement de la patiente plutôt que de lui dicter la marche à suivre)
+
+Retour : La réponse du soignant se concentre sur la persuasion et la menace des complications, un comportement à éviter en EM, sans construire l'alliance ni faire émerger les propres motivations de la patiente. Les alternatives proposées ci-dessus s'appuient sur les compétences de base de l'EM (questions ouvertes, reflets) et respectent le partenariat avec la patiente.
+
+N'ajoutez aucun format à votre réponse, uniquement du texte brut.
+---
+"""
+        ),
     },
     "agressif": {
         "label": "Agressif",
@@ -278,11 +262,63 @@ RÈGLES ABSOLUES :
 10. Maximum 3 phrases par réponse, quel que soit l'état émotionnel.
 11. S'il n'y a rien à dire : [sigh]"""
         ),
+        "eval": (
+            """Cadre NURS (Smith, 1996)
+Smith (1996) a défini une stratégie de communication destinée à guider les praticiens dans des situations chargées émotionnellement. L'acronyme NURS signifie :
+Name (N) : Nommer l'émotion exprimée par le patient en utilisant un langage plus doux et moins intense (par ex. « irritation » au lieu de « colère », « cela vous pèse » au lieu de « extrêmement frustrant »).
+Understand (U) : Comprendre ou normaliser l'expérience du patient.
+Respect (R) : Reconnaître explicitement les difficultés du patient.
+Support (S) : Soutenir le patient.
+
+Consignes strictes pour nommer les émotions (N) :
+Utilisez toujours des termes plus doux et moins intenses pour nommer les émotions. Évitez les intensificateurs (par ex. « très », « extrêmement », « vraiment ») ainsi que les qualificatifs émotionnels forts.
+Remplacez les formulations fortes ou chargées émotionnellement par des alternatives plus nuancées qui valident néanmoins l'expérience du patient.
+N'amplifiez jamais l'état émotionnel du patient — l'objectif est de l'aider à reconnaître ses émotions sans qu'il se sente submergé.
+
+Éviter	|| Utiliser à la place
+Extrêmement frustrant	|| Cela vous pèse, cela vous dérange
+Très inquiet	|| Ressentir une certaine inquiétude
+Vraiment anxieux	|| Se sentir un peu mal à l'aise
+Submergé	|| Trouver cela difficile à gérer
+Furieux	|| Un peu irrité, frustré
+
+Exemple : Au lieu de dire « Vous semblez très en colère », dites « On dirait que vous vous sentez un peu irrité. »
+
+Processus d'évaluation
+Examiner la conversation entre le praticien et le patient.
+Noter chaque composante du modèle NURS sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent).
+Fournir un retour avec des exemples précis tirés de la conversation.
+Proposer des réponses alternatives uniquement si une composante obtient une note inférieure à 5/5, en veillant à nommer les émotions avec un langage plus doux et sans intensificateurs.
+
+Exemple d'évaluation
+Extrait de conversation :
+Patient : « Je suis tellement inquiet à propos de mes résultats d'examen. Je n'arrête pas de penser au pire scénario. »
+Praticien : « Essayez de ne pas trop vous inquiéter. Nous en saurons davantage bientôt. »
+
+Évaluation :
+N (Name) : 2/5 – Le praticien ne nomme pas l'émotion du patient.
+U (Understand) : 1/5 – Aucun effort pour comprendre ou normaliser les émotions du patient.
+R (Respect) : 3/5 – Les préoccupations du patient sont reconnues mais minimisées.
+S (Support) : 2/5 – La réponse manque de collaboration ou de réassurance.
+
+Réponses alternatives suggérées (pour les composantes <5/5) :
+N : « On dirait que vous ressentez une certaine inquiétude à propos des résultats. » (plus doux que « inquiet » ou « anxieux »)
+U : « Il est tout à fait normal de se sentir ainsi en attendant des résultats. Beaucoup de personnes ressentent la même chose. »
+R : « Je vois que c'est une période difficile pour vous, et je veux que vous sachiez que vos émotions sont légitimes. »
+S : « Nous allons traverser cela ensemble. Parlons de ce qui pourrait vous aider à vous sentir un peu plus apaisé pendant l'attente. »
+
+Retour : La réponse du praticien minimise les préoccupations du patient. Les alternatives proposées ci-dessus utilisent un langage plus doux et évitent les intensificateurs, conformément au cadre NURS.
+
+N'ajoutez aucun format à votre réponse, uniquement du texte brut.
+---
+"""
+        ),
     },
     # Add more modules here:
     # "key": {
     #     "label": "Nom affiché dans l'interface",
-    #     "system": "Message système complet.",
+    #     "system": "Message système du patient.",
+    #     "eval": "Grille d'évaluation spécifique à ce cas.",
     # },
 }
 
@@ -546,7 +582,17 @@ def evaluate():
     if session_id not in sessions:
         return jsonify({"error": "Session not found"}), 400
 
-    history = sessions[session_id]["history"]
+    session_data   = sessions[session_id]
+    history        = session_data["history"]
+    interview_type = session_data.get("interview_type")
+
+    module = INTERVIEW_MODULES.get(interview_type)
+    if not module or "eval" not in module:
+        return jsonify({
+            "error": f"No evaluation prompt configured for interview_type '{interview_type}'"
+        }), 400
+
+    eval_system_prompt = module["eval"]
 
     lines = []
     for msg in history:
@@ -563,7 +609,7 @@ def evaluate():
         response = eval_client.chat.complete(
             model=EVAL_MODEL,
             messages=[
-                {"role": "system", "content": EVAL_SYSTEM_PROMPT},
+                {"role": "system", "content": eval_system_prompt},
                 {"role": "user",   "content": f"Voici le transcript de la consultation à évaluer :\n\n{transcript_text}"}
             ]
         )
