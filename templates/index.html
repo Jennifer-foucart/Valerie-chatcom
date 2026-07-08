@@ -70,8 +70,13 @@
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
         header span { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2); }
-        #back-btn { margin-left: 12px; background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
-        #back-btn:hover { color: var(--accent); }
+
+        /* ── Discreet "back" text-link style, shared by header back-btn and patient fiche back-btn ── */
+        #back-btn, #patient-back-btn { background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
+        #back-btn:hover, #patient-back-btn:hover { color: var(--accent); }
+        #back-btn { margin-left: 12px; }
+
+        .patient-page-top { width: 100%; max-width: 480px; margin-bottom: 12px; }
 
         /* ── Portrait ── */
         #portrait-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
@@ -231,6 +236,9 @@
 
     <!-- Step 2: Fiche patiente (dynamique selon le module choisi) -->
     <div id="patient-page" class="overlay-page" style="display:none">
+        <div class="patient-page-top">
+            <button id="patient-back-btn">← retour</button>
+        </div>
         <div class="fiche" id="patient-fiche-content">
             <!-- rempli dynamiquement en JS -->
         </div>
@@ -476,6 +484,17 @@
             document.getElementById("patient-portrait").alt = fiche.name;
         }
 
+        /* ── Shared "back to choice" logic ── */
+        function goBackToChoice(fromChatCall) {
+            if (fromChatCall && inCall) stopCall();
+            fetch("/reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ session_id: SESSION_ID })
+            });
+            selectedInterviewType = null;
+        }
+
         /* ── Step 1 (choice) → Step 2 (fiche) ── */
         document.getElementById("next-btn").addEventListener("click", async () => {
             if (!selectedInterviewType) {
@@ -499,6 +518,12 @@
             nextBtn.disabled = false;
             nextBtnLabel.textContent = "Voir la fiche patient →";
             nextBtnSpinner.classList.remove("show");
+        });
+
+        /* ── Step 2 (fiche) → back to Step 1 (choice) ── */
+        document.getElementById("patient-back-btn").addEventListener("click", () => {
+            goBackToChoice(false);
+            hidePage("patient-page", () => { showPage("choice-page"); loadModules(); });
         });
 
         /* ── Step 2 (fiche) → Chat ── */
@@ -527,15 +552,9 @@
             }
         });
 
-        /* ── Back button ── */
+        /* ── Back button (chat page) ── */
         document.getElementById("back-btn").addEventListener("click", () => {
-            if (inCall) stopCall();
-            fetch("/reset", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ session_id: SESSION_ID })
-            });
-            selectedInterviewType = null;
+            goBackToChoice(true);
             hideChatPage();
             showPage("choice-page");
             loadModules();
