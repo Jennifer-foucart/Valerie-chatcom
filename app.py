@@ -28,8 +28,13 @@ VOSK_MODEL_PATH = os.environ.get("VOSK_MODEL_PATH", "models/vosk-model-small-fr-
 
 # =========================
 # INTERVIEW MODULES
-# Each module now defines its own "system" prompt (patient persona)
-# AND its own "eval" prompt (evaluation grid specific to that use case).
+# Each module defines:
+#   - "system": the patient persona prompt
+#   - "eval": the evaluation grid specific to that use case
+#   - "practitioner_label": how the human participant is labeled in
+#     the transcript sent to the evaluator (and in the downloadable
+#     transcript), so evaluation feedback doesn't default to "Médecin"
+#     for scenarios where the role is a generic healthcare provider.
 # =========================
 INTERVIEW_MODULES = {
     "motivational": {
@@ -125,6 +130,7 @@ RÈGLES ABSOLUES :
 8. Si l'échange devient fermé et qu'il n'y a rien à ajouter, réponds uniquement : [sigh]
 9. Maximum 3 phrases par réponse, quel que soit l'état émotionnel (1 phrase en état DÉFENSIVE/AGACÉE).
 10. Ne jamais donner de diagnostic ni de conseil médical.
+11. Tu ne perçois et ne réagis JAMAIS à des éléments non-verbaux du soignant (posture, regard, gestes, expressions du visage, tenue, distance physique, etc.). N'évoque jamais son langage corporel, que ce soit pour le commenter, le décrire, ou y réagir émotionnellement.
 """
         ),
         "eval": (
@@ -172,6 +178,7 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
 ---
 """
         ),
+        "practitioner_label": "Soignant",
     },
     "agressif": {
         "label": "Agressif",
@@ -313,12 +320,14 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
 ---
 """
         ),
+        "practitioner_label": "Soignant",
     },
     # Add more modules here:
     # "key": {
     #     "label": "Nom affiché dans l'interface",
     #     "system": "Message système du patient.",
     #     "eval": "Grille d'évaluation spécifique à ce cas.",
+    #     "practitioner_label": "Soignant" / "Médecin" / etc.,
     # },
 }
 
@@ -549,7 +558,9 @@ def end_session():
 
     history        = sessions[session_id]["history"]
     interview_type = sessions[session_id].get("interview_type", "unknown")
-    label          = INTERVIEW_MODULES.get(interview_type, {}).get("label", interview_type)
+    module         = INTERVIEW_MODULES.get(interview_type, {})
+    label          = module.get("label", interview_type)
+    practitioner_label = module.get("practitioner_label", "Soignant")
 
     lines = [
         "=== Transcript de consultation ===",
@@ -560,7 +571,7 @@ def end_session():
     for msg in history:
         if msg["role"] == "system":
             continue
-        speaker = "Médecin  " if msg["role"] == "user" else "Patiente "
+        speaker = f"{practitioner_label}  " if msg["role"] == "user" else "Patiente "
         lines.append(f"{speaker}: {msg['content']}")
         lines.append("")
 
@@ -593,12 +604,13 @@ def evaluate():
         }), 400
 
     eval_system_prompt = module["eval"]
+    practitioner_label  = module.get("practitioner_label", "Soignant")
 
     lines = []
     for msg in history:
         if msg["role"] == "system":
             continue
-        speaker = "Médecin" if msg["role"] == "user" else "Patiente"
+        speaker = practitioner_label if msg["role"] == "user" else "Patiente"
         lines.append(f"{speaker}: {msg['content']}")
     transcript_text = "\n".join(lines)
 
