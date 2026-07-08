@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Valérie — Chatcom</title>
+    <title>Chatcom</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap"
         rel="stylesheet" />
@@ -97,7 +97,7 @@
         @keyframes fadeOut { from { opacity:1; transform:translateY(0);      } to { opacity:0; transform:translateY(-12px); } }
 
         /* centre the fiche pages that have little content */
-        #welcome-page, #choice-page { justify-content: center; }
+        #patient-page, #choice-page { justify-content: center; }
 
         /* ── Fiche ── */
         .fiche { max-width: 480px; width: 100%; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 36px 40px; box-shadow: 0 8px 40px rgba(26,26,46,.08); }
@@ -161,35 +161,8 @@
 
 <body>
 
-    <!-- Step 1: Fiche patiente -->
-    <div id="welcome-page" class="overlay-page">
-        <div class="fiche">
-            <div class="fiche-header">
-                <div class="fiche-tag">Fiche Patiente</div>
-                <div class="fiche-title">Valérie Decocq</div>
-            </div>
-            <div class="fiche-section">
-                <div class="fiche-section-title">Identité &amp; Contexte</div>
-                <p>40 ans, mère de 2 enfants (2 et 6 ans), en couple.<br />Responsable de communication.</p>
-            </div>
-            <div class="fiche-section">
-                <div class="fiche-section-title">Motif de consultation</div>
-                <p>Douleurs diffuses chroniques depuis 3 mois.<br />Examens normaux (radios, bilans).</p>
-            </div>
-            <div class="fiche-section">
-                <div class="fiche-section-title">Parcours médical</div>
-                <p style="margin-bottom:8px">Traitements essayés :</p>
-                <ul>
-                    <li>Antidouleurs / anti-inflammatoires</li>
-                    <li>Modifications alimentaires</li>
-                </ul>
-            </div>
-        </div>
-        <button class="cta-btn" id="next-btn">Choisir le type d'entretien →</button>
-    </div>
-
-    <!-- Step 2: Interview type -->
-    <div id="choice-page" class="overlay-page" style="display:none">
+    <!-- Step 1: Interview type -->
+    <div id="choice-page" class="overlay-page">
         <div class="fiche">
             <div class="fiche-header">
                 <div class="fiche-tag">Type d'entretien</div>
@@ -200,9 +173,17 @@
                     <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)">Chargement…</div>
                 </div>
                 <div id="choice-error"></div>
-                <div id="start-loading">Préparation en cours…</div>
             </div>
         </div>
+        <button class="cta-btn" id="next-btn">Voir la fiche patient →</button>
+    </div>
+
+    <!-- Step 2: Fiche patiente (dynamique selon le module choisi) -->
+    <div id="patient-page" class="overlay-page" style="display:none">
+        <div class="fiche" id="patient-fiche-content">
+            <!-- rempli dynamiquement en JS -->
+        </div>
+        <div id="start-loading">Préparation en cours…</div>
         <button class="cta-btn" id="start-btn">Commencer la consultation →</button>
     </div>
 
@@ -242,8 +223,8 @@
 
     <!-- Chat UI -->
     <header>
-        <h1>Valérie</h1>
-        <span>Chatcom · FR</span>
+        <h1 id="patient-header-name">Chatcom</h1>
+        <span>FR</span>
         <div class="status-dot"></div>
         <button id="back-btn">← retour</button>
     </header>
@@ -252,7 +233,7 @@
         <div class="portrait-frame">
             <div class="ring ring-outer" id="ring-outer">
                 <div class="ring ring-inner">
-                    <img src="/static/valerie.jpg" alt="Valérie" />
+                    <img id="patient-portrait" src="/static/valerie.jpg" alt="" />
                 </div>
             </div>
             <div id="thinking-overlay">
@@ -291,6 +272,61 @@
         const SESSION_ID = crypto.randomUUID();
         let selectedInterviewType = null;
         let lastTranscriptText    = "";
+
+        /* ── Patient fiches (dynamic, keyed by interview_type) ── */
+        const PATIENT_FICHES = {
+            agressif: {
+                name: "Valérie Decocq",
+                portrait: "/static/valerie.jpg",
+                html: `
+                    <div class="fiche-header">
+                        <div class="fiche-tag">Fiche Patiente</div>
+                        <div class="fiche-title">Valérie Decocq</div>
+                    </div>
+                    <div class="fiche-section">
+                        <div class="fiche-section-title">Identité &amp; Contexte</div>
+                        <p>40 ans, mère de 2 enfants (2 et 6 ans), en couple.<br />Responsable de communication.</p>
+                    </div>
+                    <div class="fiche-section">
+                        <div class="fiche-section-title">Motif de consultation</div>
+                        <p>Douleurs diffuses chroniques depuis 3 mois.<br />Examens normaux (radios, bilans).</p>
+                    </div>
+                    <div class="fiche-section">
+                        <div class="fiche-section-title">Parcours médical</div>
+                        <p style="margin-bottom:8px">Traitements essayés :</p>
+                        <ul>
+                            <li>Antidouleurs / anti-inflammatoires</li>
+                            <li>Modifications alimentaires</li>
+                        </ul>
+                    </div>
+                `
+            },
+            motivational: {
+                name: "Isabelle Dupont",
+                portrait: "/static/isabelle.jpg",
+                html: `
+                    <div class="fiche-header">
+                        <div class="fiche-tag">Fiche Patiente</div>
+                        <div class="fiche-title">Isabelle Dupont</div>
+                    </div>
+                    <div class="fiche-section">
+                        <div class="fiche-section-title">Identité &amp; Contexte</div>
+                        <p>45 ans, mariée, mère de trois garçons (18, 16 et 13 ans).<br />Décoratrice d'intérieur indépendante, gérante de son propre magasin.</p>
+                    </div>
+                    <div class="fiche-section">
+                        <div class="fiche-section-title">Motif de consultation</div>
+                        <p>Suivi habituel d'un diabète de type 2 évoluant depuis 12 ans.<br />Diabète mal équilibré, prise de poids récente.</p>
+                    </div>
+                    <div class="fiche-section">
+                        <div class="fiche-section-title">Éléments de contexte</div>
+                        <ul>
+                            <li>Difficulté à gérer l'alimentation, grignotage lié au stress</li>
+                            <li>Sédentarité, fatigue morale liée à la charge familiale et professionnelle</li>
+                        </ul>
+                    </div>
+                `
+            }
+        };
 
         /* ── State ── */
         let inCall = false, isSpeaking = false, isProcessing = false;
@@ -359,17 +395,32 @@
             }
         }
 
-        /* ── Step 1 → Step 2 ── */
-        document.getElementById("next-btn").addEventListener("click", () => {
-            hidePage("welcome-page", () => { showPage("choice-page"); loadModules(); });
-        });
+        /* ── Populate the patient fiche based on selected type ── */
+        function populatePatientFiche(type) {
+            const fiche = PATIENT_FICHES[type];
+            const container = document.getElementById("patient-fiche-content");
+            if (!fiche) {
+                container.innerHTML = `<div class="fiche-header"><div class="fiche-title">Fiche indisponible</div></div>`;
+                return;
+            }
+            container.innerHTML = fiche.html;
+            document.getElementById("patient-header-name").textContent = fiche.name;
+            document.getElementById("patient-portrait").src = fiche.portrait;
+            document.getElementById("patient-portrait").alt = fiche.name;
+        }
 
-        /* ── Step 2 → Chat ── */
-        document.getElementById("start-btn").addEventListener("click", async () => {
+        /* ── Step 1 (choice) → Step 2 (fiche) ── */
+        document.getElementById("next-btn").addEventListener("click", () => {
             if (!selectedInterviewType) {
                 document.getElementById("choice-error").textContent = "Veuillez choisir un type d'entretien.";
                 return;
             }
+            populatePatientFiche(selectedInterviewType);
+            hidePage("choice-page", () => showPage("patient-page"));
+        });
+
+        /* ── Step 2 (fiche) → Chat ── */
+        document.getElementById("start-btn").addEventListener("click", async () => {
             const loadingEl = document.getElementById("start-loading");
             const startBtn  = document.getElementById("start-btn");
             loadingEl.style.display = "block";
@@ -382,12 +433,12 @@
                 });
                 if (!res.ok) {
                     const err = await res.json();
-                    document.getElementById("choice-error").textContent = err.error || "Erreur serveur.";
+                    showToast(err.error || "Erreur serveur.");
                     return;
                 }
-                hidePage("choice-page");
+                hidePage("patient-page");
             } catch {
-                document.getElementById("choice-error").textContent = "Erreur réseau, réessayez.";
+                showToast("Erreur réseau, réessayez.");
             } finally {
                 loadingEl.style.display = "none";
                 startBtn.disabled = false;
@@ -454,7 +505,6 @@
         document.getElementById("evaluate-btn").addEventListener("click", async () => {
             const btn       = document.getElementById("evaluate-btn");
             const loadingEl = document.getElementById("eval-loading");
-            const page      = document.getElementById("transcript-page");
             btn.disabled = true;
             loadingEl.style.display = "block";
             document.getElementById("eval-card").style.display   = "none";
@@ -478,7 +528,6 @@
                 document.getElementById("eval-feedback").textContent = data.feedback;
                 document.getElementById("eval-card").style.display   = "block";
 
-                // Scroll to the evaluation result
                 setTimeout(() => {
                     document.getElementById("eval-card").scrollIntoView({ behavior: "smooth", block: "start" });
                 }, 100);
@@ -628,6 +677,9 @@
         sendBtn.addEventListener("click", () => sendMessage());
         inputEl.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
         micBtn.addEventListener("click", () => { if (inCall) stopCall(); else startCall(); });
+
+        /* ── Init ── */
+        loadModules();
     </script>
 </body>
 </html>
