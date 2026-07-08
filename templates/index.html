@@ -235,10 +235,7 @@
             <!-- rempli dynamiquement en JS -->
         </div>
         <div id="start-loading">Préparation en cours…</div>
-        <div class="btn-row">
-            <button class="cta-btn secondary" id="patient-back-btn">← Retour</button>
-            <button class="cta-btn" id="start-btn">Commencer la consultation →</button>
-        </div>
+        <button class="cta-btn" id="start-btn">Commencer la consultation →</button>
     </div>
 
     <!-- Step 3: Transcript + evaluation -->
@@ -479,17 +476,6 @@
             document.getElementById("patient-portrait").alt = fiche.name;
         }
 
-        /* ── Shared "back to choice" logic ── */
-        function goBackToChoice(fromChatCall) {
-            if (fromChatCall && inCall) stopCall();
-            fetch("/reset", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ session_id: SESSION_ID })
-            });
-            selectedInterviewType = null;
-        }
-
         /* ── Step 1 (choice) → Step 2 (fiche) ── */
         document.getElementById("next-btn").addEventListener("click", async () => {
             if (!selectedInterviewType) {
@@ -513,12 +499,6 @@
             nextBtn.disabled = false;
             nextBtnLabel.textContent = "Voir la fiche patient →";
             nextBtnSpinner.classList.remove("show");
-        });
-
-        /* ── Step 2 (fiche) → back to Step 1 (choice) ── */
-        document.getElementById("patient-back-btn").addEventListener("click", () => {
-            goBackToChoice(false);
-            hidePage("patient-page", () => { showPage("choice-page"); loadModules(); });
         });
 
         /* ── Step 2 (fiche) → Chat ── */
@@ -547,9 +527,15 @@
             }
         });
 
-        /* ── Back button (chat page) ── */
+        /* ── Back button ── */
         document.getElementById("back-btn").addEventListener("click", () => {
-            goBackToChoice(true);
+            if (inCall) stopCall();
+            fetch("/reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ session_id: SESSION_ID })
+            });
+            selectedInterviewType = null;
             hideChatPage();
             showPage("choice-page");
             loadModules();
