@@ -34,6 +34,30 @@
             overflow: hidden;
         }
 
+        /* ── Page loader (initial load) ── */
+        #page-loader {
+            position: fixed; inset: 0; z-index: 300;
+            background: var(--paper);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 14px;
+            transition: opacity .35s ease;
+        }
+        #page-loader.hidden { opacity: 0; pointer-events: none; }
+        .loader-spinner {
+            width: 34px; height: 34px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-lt);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            font-family: 'DM Mono', monospace; font-size: .72rem;
+            letter-spacing: .14em; text-transform: uppercase;
+            color: var(--muted);
+        }
+
         /* ── Header ── */
         header { width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
@@ -113,7 +137,7 @@
         .fiche-section ul li::before { content: "—"; position: absolute; left: 0; color: var(--accent-lt); }
 
         /* ── CTA buttons ── */
-        .cta-btn { margin-top: 16px; width: 100%; max-width: 480px; padding: 14px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: .06em; background: var(--accent); color: var(--paper); border: none; border-radius: 40px; cursor: pointer; transition: background .2s, transform .1s; }
+        .cta-btn { margin-top: 16px; width: 100%; max-width: 480px; padding: 14px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; letter-spacing: .06em; background: var(--accent); color: var(--paper); border: none; border-radius: 40px; cursor: pointer; transition: background .2s, transform .1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .cta-btn:hover { background: var(--accent-lt); }
         .cta-btn:active { transform: scale(.98); }
         .cta-btn:disabled { opacity: .5; cursor: default; }
@@ -122,6 +146,17 @@
 
         .btn-row { display: flex; gap: 10px; width: 100%; max-width: 480px; flex-wrap: wrap; }
         .btn-row .cta-btn { margin-top: 16px; flex: 1; min-width: 120px; }
+
+        /* ── Small inline spinner for buttons ── */
+        .btn-spinner {
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: none;
+        }
+        .btn-spinner.show { display: inline-block; }
 
         /* ── Interview choice ── */
         .interview-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
@@ -161,8 +196,14 @@
 
 <body>
 
+    <!-- Initial page loader (shown until /modules has loaded) -->
+    <div id="page-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Chargement…</div>
+    </div>
+
     <!-- Step 1: Interview type -->
-    <div id="choice-page" class="overlay-page">
+    <div id="choice-page" class="overlay-page" style="display:none">
         <div class="fiche">
             <div class="fiche-header">
                 <div class="fiche-tag">Type d'entretien</div>
@@ -175,7 +216,10 @@
                 <div id="choice-error"></div>
             </div>
         </div>
-        <button class="cta-btn" id="next-btn">Voir la fiche patient →</button>
+        <button class="cta-btn" id="next-btn">
+            <span id="next-btn-label">Voir la fiche patient →</span>
+            <span class="btn-spinner" id="next-btn-spinner"></span>
+        </button>
     </div>
 
     <!-- Step 2: Fiche patiente (dynamique selon le module choisi) -->
@@ -369,6 +413,16 @@
             el.scrollTop = 0;
         }
 
+        /* ── Preload an image, resolves once loaded (or on error, so we never hang) ── */
+        function preloadImage(src) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload  = resolve;
+                img.onerror = resolve;
+                img.src = src;
+            });
+        }
+
         /* ── Load module buttons ── */
         async function loadModules() {
             const grid = document.getElementById("interview-grid");
@@ -410,13 +464,28 @@
         }
 
         /* ── Step 1 (choice) → Step 2 (fiche) ── */
-        document.getElementById("next-btn").addEventListener("click", () => {
+        document.getElementById("next-btn").addEventListener("click", async () => {
             if (!selectedInterviewType) {
                 document.getElementById("choice-error").textContent = "Veuillez choisir un type d'entretien.";
                 return;
             }
+            const nextBtn      = document.getElementById("next-btn");
+            const nextBtnLabel = document.getElementById("next-btn-label");
+            const nextBtnSpinner = document.getElementById("next-btn-spinner");
+
+            nextBtn.disabled = true;
+            nextBtnLabel.textContent = "Chargement…";
+            nextBtnSpinner.classList.add("show");
+
+            const fiche = PATIENT_FICHES[selectedInterviewType];
+            if (fiche) await preloadImage(fiche.portrait);
+
             populatePatientFiche(selectedInterviewType);
             hidePage("choice-page", () => showPage("patient-page"));
+
+            nextBtn.disabled = false;
+            nextBtnLabel.textContent = "Voir la fiche patient →";
+            nextBtnSpinner.classList.remove("show");
         });
 
         /* ── Step 2 (fiche) → Chat ── */
@@ -679,7 +748,12 @@
         micBtn.addEventListener("click", () => { if (inCall) stopCall(); else startCall(); });
 
         /* ── Init ── */
-        loadModules();
+        (async function init() {
+            await loadModules();
+            document.getElementById("page-loader").classList.add("hidden");
+            setTimeout(() => { document.getElementById("page-loader").style.display = "none"; }, 400);
+            showPage("choice-page");
+        })();
     </script>
 </body>
 </html>
