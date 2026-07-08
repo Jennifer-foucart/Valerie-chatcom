@@ -28,9 +28,6 @@
             background: var(--paper);
             color: var(--ink);
             min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             overflow: hidden;
         }
 
@@ -56,6 +53,16 @@
             font-family: 'DM Mono', monospace; font-size: .72rem;
             letter-spacing: .14em; text-transform: uppercase;
             color: var(--muted);
+        }
+
+        /* ── Chat page (hidden until a session is actually started) ── */
+        #chat-page {
+            display: none;
+            position: fixed; inset: 0; z-index: 50;
+            background: var(--paper);
+            flex-direction: column;
+            align-items: center;
+            height: 100dvh;
         }
 
         /* ── Header ── */
@@ -265,48 +272,50 @@
         </div>
     </div>
 
-    <!-- Chat UI -->
-    <header>
-        <h1 id="patient-header-name">Chatcom</h1>
-        <span>FR</span>
-        <div class="status-dot"></div>
-        <button id="back-btn">← retour</button>
-    </header>
+    <!-- Chat page (hidden until a session is actually started) -->
+    <div id="chat-page">
+        <header>
+            <h1 id="patient-header-name">Chatcom</h1>
+            <span>FR</span>
+            <div class="status-dot"></div>
+            <button id="back-btn">← retour</button>
+        </header>
 
-    <div id="portrait-wrap">
-        <div class="portrait-frame">
-            <div class="ring ring-outer" id="ring-outer">
-                <div class="ring ring-inner">
-                    <img id="patient-portrait" src="/static/valerie.jpg" alt="" />
+        <div id="portrait-wrap">
+            <div class="portrait-frame">
+                <div class="ring ring-outer" id="ring-outer">
+                    <div class="ring ring-inner">
+                        <img id="patient-portrait" src="/static/valerie.jpg" alt="" />
+                    </div>
+                </div>
+                <div id="thinking-overlay">
+                    <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
                 </div>
             </div>
-            <div id="thinking-overlay">
-                <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
-            </div>
+            <div id="status-label">en attente</div>
+            <div id="interim"></div>
         </div>
-        <div id="status-label">en attente</div>
-        <div id="interim"></div>
-    </div>
 
-    <div id="input-bar">
-        <button class="btn-icon" id="mic-btn" title="Appel en direct">
-            <svg id="icon-call" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.08 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-            </svg>
-            <svg id="icon-endcall" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.08 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                <line x1="1" y1="1" x2="23" y2="23" stroke="var(--red)" stroke-width="1.8" />
-            </svg>
-        </button>
+        <div id="input-bar">
+            <button class="btn-icon" id="mic-btn" title="Appel en direct">
+                <svg id="icon-call" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.08 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <svg id="icon-endcall" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.08 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                    <line x1="1" y1="1" x2="23" y2="23" stroke="var(--red)" stroke-width="1.8" />
+                </svg>
+            </button>
 
-        <input type="text" id="user-input" placeholder="Écrivez un message…" autocomplete="off" />
+            <input type="text" id="user-input" placeholder="Écrivez un message…" autocomplete="off" />
 
-        <button class="btn-icon" id="send-btn" title="Envoyer">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-        </button>
+            <button class="btn-icon" id="send-btn" title="Envoyer">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+            </button>
+        </div>
     </div>
 
     <div id="toast"></div>
@@ -389,6 +398,7 @@
         const thinkingOvl = document.getElementById("thinking-overlay");
         const interimEl   = document.getElementById("interim");
         const toast       = document.getElementById("toast");
+        const chatPage    = document.getElementById("chat-page");
 
         /* ── UI helpers ── */
         function showToast(msg) { toast.textContent = msg; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 3500); }
@@ -396,6 +406,9 @@
         function setThinking(on) { thinkingOvl.classList.toggle("show", on); if (on) setStatus("réfléchit…", true); }
         function setSpeaking(on) { isSpeaking = on; ringOuter.classList.toggle("speaking", on); if (on) { setStatus("parle…", true); setInterim(""); } }
         function setInterim(text) { interimEl.textContent = text; interimEl.classList.toggle("show", !!text); }
+
+        function showChatPage() { chatPage.style.display = "flex"; }
+        function hideChatPage() { chatPage.style.display = "none"; }
 
         /* ── Page transitions ── */
         function hidePage(id, then) {
@@ -469,8 +482,8 @@
                 document.getElementById("choice-error").textContent = "Veuillez choisir un type d'entretien.";
                 return;
             }
-            const nextBtn      = document.getElementById("next-btn");
-            const nextBtnLabel = document.getElementById("next-btn-label");
+            const nextBtn        = document.getElementById("next-btn");
+            const nextBtnLabel   = document.getElementById("next-btn-label");
             const nextBtnSpinner = document.getElementById("next-btn-spinner");
 
             nextBtn.disabled = true;
@@ -505,7 +518,7 @@
                     showToast(err.error || "Erreur serveur.");
                     return;
                 }
-                hidePage("patient-page");
+                hidePage("patient-page", () => showChatPage());
             } catch {
                 showToast("Erreur réseau, réessayez.");
             } finally {
@@ -523,6 +536,7 @@
                 body: JSON.stringify({ session_id: SESSION_ID })
             });
             selectedInterviewType = null;
+            hideChatPage();
             showPage("choice-page");
             loadModules();
         });
@@ -545,6 +559,7 @@
             document.getElementById("eval-card").style.display     = "none";
             document.getElementById("eval-loading").style.display  = "none";
             document.getElementById("eval-feedback").textContent   = "";
+            hideChatPage();
             showPage("transcript-page");
         }
 
