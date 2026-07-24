@@ -21,8 +21,16 @@ EVAL_MODEL      = "mistral-medium-latest"
 INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OTdHdE1Hb0VseVM3RXhMVlNLYVFDMGcwOEZJbVF0eUY6OGhndjNhR3JhT0JyUXJqUWZWVXZqeWlTSFJRMDZSR3RTcllVRm9BS2VYUGFrTE9RTnpOQ0xteGlicTBzZGV3MQ==")
 INWORLD_TTS_URL = "https://api.inworld.ai/tts/v1/voice:stream"
 
-VOICE_ID = "Hélène"
+DEFAULT_VOICE_ID = "Hélène"
 MODEL_ID  = "inworld-tts-1.5-max"
+
+# Central place to pick a voice for a new module — add to this dict once,
+# then reference VOICES["key"] in a module's "voice_id" instead of typing
+# a raw Inworld voiceId (and risking a typo / wrong-gender voice).
+VOICES = {
+    "female_fr": "Hélène",
+    "male_fr":   "Étienne",
+}
 
 VOSK_MODEL_PATH = os.environ.get("VOSK_MODEL_PATH", "models/vosk-model-small-fr-0.22")
 
@@ -179,6 +187,8 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
 """
         ),
         "practitioner_label": "Soignant",
+        "patient_label": "Patiente",
+        "voice_id": VOICES["female_fr"],
     },
     "agressif": {
         "label": "Agressif",
@@ -321,6 +331,8 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
 """
         ),
         "practitioner_label": "Soignant",
+        "patient_label": "Patiente",
+        "voice_id": VOICES["female_fr"],
     },
     "renvoi_psy": {
         "label": "Renvoi vers un psychologue",
@@ -466,6 +478,8 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
 """
         ),
         "practitioner_label": "Soignant",
+        "patient_label": "Patient",
+        "voice_id": VOICES["male_fr"],
     },
     # Add more modules here:
     # "key": {
@@ -539,10 +553,10 @@ def split_sentences(text: str):
     return [p.strip() for p in parts if p.strip()]
 
 
-def stream_opus_chunks(text: str):
+def stream_opus_chunks(text: str, voice_id: str = DEFAULT_VOICE_ID):
     payload = {
         "text": text,
-        "voiceId": VOICE_ID,
+        "voiceId": voice_id,
         "modelId": MODEL_ID,
         "temperature": 1.48,
         "audio_config": {
@@ -658,7 +672,11 @@ def chat_stream():
     if not user_text:
         return jsonify({"error": "Empty message"}), 400
 
-    history = sessions[session_id]["history"]
+    history        = sessions[session_id]["history"]
+    interview_type = sessions[session_id].get("interview_type")
+    module         = INTERVIEW_MODULES.get(interview_type, {})
+    voice_id       = module.get("voice_id", DEFAULT_VOICE_ID)
+
     history.append({"role": "user", "content": user_text})
 
     try:
@@ -680,7 +698,7 @@ def chat_stream():
         for sentence in sentences:
             yield json.dumps({"type": "sentence_start", "text": sentence}) + "\n"
             try:
-                for opus_chunk in stream_opus_chunks(sentence):
+                for opus_chunk in stream_opus_chunks(sentence, voice_id):
                     yield json.dumps({
                         "type": "audio",
                         "data": base64.b64encode(opus_chunk).decode()
@@ -706,6 +724,7 @@ def end_session():
     module         = INTERVIEW_MODULES.get(interview_type, {})
     label          = module.get("label", interview_type)
     practitioner_label = module.get("practitioner_label", "Soignant")
+    patient_label       = module.get("patient_label", "Patiente")
 
     lines = [
         "=== Transcript de consultation ===",
@@ -716,7 +735,7 @@ def end_session():
     for msg in history:
         if msg["role"] == "system":
             continue
-        speaker = f"{practitioner_label}  " if msg["role"] == "user" else "Patiente "
+        speaker = f"{practitioner_label}  " if msg["role"] == "user" else f"{patient_label} "
         lines.append(f"{speaker}: {msg['content']}")
         lines.append("")
 
@@ -750,12 +769,13 @@ def evaluate():
 
     eval_system_prompt = module["eval"]
     practitioner_label  = module.get("practitioner_label", "Soignant")
+    patient_label       = module.get("patient_label", "Patiente")
 
     lines = []
     for msg in history:
         if msg["role"] == "system":
             continue
-        speaker = practitioner_label if msg["role"] == "user" else "Patiente"
+        speaker = practitioner_label if msg["role"] == "user" else patient_label
         lines.append(f"{speaker}: {msg['content']}")
     transcript_text = "\n".join(lines)
 
