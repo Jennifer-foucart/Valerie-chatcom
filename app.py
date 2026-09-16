@@ -1218,6 +1218,7 @@ def chat_stream():
         assistant_reply = response.choices[0].message.content
         history.append({"role": "assistant", "content": assistant_reply})
     except Exception as e:
+        history.pop()  # remove the orphaned user turn so history stays valid for the next attempt
         tb = traceback.format_exc()
         app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
         return jsonify({"error": str(e), "trace": tb}), 500
