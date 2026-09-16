@@ -276,6 +276,7 @@
                 <div class="fiche-section">
                     <div id="eval-feedback"></div>
                 </div>
+                <button class="cta-btn secondary" id="download-eval-btn">⬇ Télécharger l'évaluation</button>
             </div>
         </div>
     </div>
@@ -333,6 +334,7 @@
         const SESSION_ID = crypto.randomUUID();
         let selectedInterviewType = null;
         let lastTranscriptText    = "";
+        let lastEvalText          = "";
 
         /* ── Patient fiches (dynamic, keyed by interview_type) ── */
         const PATIENT_FICHES = {
@@ -690,20 +692,27 @@
             document.getElementById("eval-card").style.display     = "none";
             document.getElementById("eval-loading").style.display  = "none";
             document.getElementById("eval-feedback").textContent   = "";
+            lastEvalText = "";
             hideChatPage();
             showPage("transcript-page");
         }
 
-        function triggerDownload() {
-            if (!lastTranscriptText) return;
-            const blob = new Blob([lastTranscriptText], { type: "text/plain;charset=utf-8" });
+        function triggerDownload(text, filename) {
+            if (!text) return;
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement("a");
-            a.href = url; a.download = "transcript.txt"; a.click();
+            a.href = url; a.download = filename; a.click();
             URL.revokeObjectURL(url);
         }
 
-        document.getElementById("download-btn").addEventListener("click", triggerDownload);
+        document.getElementById("download-btn").addEventListener("click", () => {
+            triggerDownload(lastTranscriptText, "transcript.txt");
+        });
+
+        document.getElementById("download-eval-btn").addEventListener("click", () => {
+            triggerDownload(lastEvalText, "evaluation.txt");
+        });
 
         document.getElementById("restart-btn").addEventListener("click", () => {
             fetch("/reset", {
@@ -713,6 +722,7 @@
             });
             selectedInterviewType = null;
             lastTranscriptText    = "";
+            lastEvalText          = "";
             hidePage("transcript-page", () => { showPage("choice-page"); loadModules(); });
         });
 
@@ -724,6 +734,7 @@
             loadingEl.style.display = "block";
             document.getElementById("eval-card").style.display   = "none";
             document.getElementById("eval-feedback").textContent = "";
+            lastEvalText = "";
 
             try {
                 const controller = new AbortController();
@@ -742,6 +753,7 @@
 
                 document.getElementById("eval-feedback").textContent = data.feedback;
                 document.getElementById("eval-card").style.display   = "block";
+                lastEvalText = data.feedback;
 
                 setTimeout(() => {
                     document.getElementById("eval-card").scrollIntoView({ behavior: "smooth", block: "start" });
