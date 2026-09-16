@@ -164,6 +164,7 @@ Identifier dans quel(s) processus se situe l'échange (Engagement, Focalisation,
 Noter chaque processus présent sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent). Un processus absent de l'échange n'est pas noté.
 Fournir un retour avec des exemples précis tirés de la conversation.
 Proposer des réponses alternatives uniquement si un processus obtient une note inférieure à 5/5, en s'appuyant sur les comportements à adopter (questions ouvertes, reflets, résumés, valorisation) plutôt que sur la persuasion ou la confrontation.
+Toujours terminer la réponse par un paragraphe de synthèse distinct, introduit par « Retour : », qui résume la performance globale du soignant sur l'ensemble de l'échange — ce paragraphe est obligatoire même si chaque processus a déjà été commenté individuellement.
 
 Exemple d'évaluation
 Extrait de conversation :
@@ -307,6 +308,7 @@ Examiner la conversation entre le praticien et le patient.
 Noter chaque composante du modèle NURS sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent).
 Fournir un retour avec des exemples précis tirés de la conversation.
 Proposer des réponses alternatives uniquement si une composante obtient une note inférieure à 5/5, en veillant à nommer les émotions avec un langage plus doux et sans intensificateurs.
+Toujours terminer la réponse par un paragraphe de synthèse distinct, introduit par « Retour : », qui résume la performance globale du praticien sur l'ensemble de l'échange — ce paragraphe est obligatoire même si chaque composante a déjà été commentée individuellement.
 
 Exemple d'évaluation
 Extrait de conversation :
@@ -455,6 +457,7 @@ Identifier dans quel(s) processus se situe l'échange (Alliance, Mise en Lien, P
 Noter chaque processus présent sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent). Un processus absent de l'échange n'est pas noté.
 Fournir un retour avec des exemples précis tirés de la conversation.
 Proposer des réponses alternatives uniquement si un processus obtient une note inférieure à 5/5, en s'appuyant sur les comportements à adopter (questions ouvertes, reflets, résumés, valorisation, reconnaissance de l'ambivalence) plutôt que sur la persuasion ou la confrontation.
+Toujours terminer la réponse par un paragraphe de synthèse distinct, introduit par « Retour : », qui résume la performance globale du soignant sur l'ensemble de l'échange — ce paragraphe est obligatoire même si chaque processus a déjà été commenté individuellement.
 
 Exemple d'évaluation
 Extrait de conversation :
@@ -608,6 +611,7 @@ Identifier dans quel(s) processus se situe l'échange (Initiation, Motifs, Recue
 Noter chaque processus présent sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent). Un processus absent de l'échange n'est pas noté (Non applicable).
 Fournir un retour avec des exemples précis tirés de la conversation.
 Proposer des réponses alternatives uniquement si un processus obtient une note inférieure à 5/5, en s'appuyant sur les comportements à adopter (entonnoir de questions, reflets, résumés, signposting) plutôt que sur l'interrogatoire ou l'explication imposée.
+Toujours terminer la réponse par un paragraphe de synthèse distinct, introduit par « Retour : », qui résume la performance globale du soignant sur l'ensemble de l'échange — ce paragraphe est obligatoire même si chaque processus a déjà été commenté individuellement.
 
 Exemple d'évaluation
 Extrait de conversation :
@@ -804,6 +808,7 @@ Noter chaque composante du modèle EPICES sur une échelle de 1 à 5 (1 = Faible
 Fournir un retour avec des exemples précis tirés de la conversation pour chaque composante.
 Vérifier spécifiquement si le soignant a demandé à Mme Dupont comment elle se sentait avant de clore l'entretien (question obligatoire de la phase de clôture) ; en l'absence de cette vérification, la composante Stratégie et synthèse ne peut pas dépasser 3/5.
 Proposer des réponses alternatives uniquement pour les composantes notées en dessous de 5/5, formulées selon les principes ci-dessus (mots justes, pas de jargon non expliqué, empathie qui reconnaît/explore plutôt qu'évite/rassure/conseille/informe).
+Toujours terminer la réponse par un paragraphe de synthèse distinct, introduit par « Retour : », qui résume la performance globale du soignant sur l'ensemble de l'échange — ce paragraphe est obligatoire même si chaque composante a déjà été commentée individuellement.
 
 Exemple d'évaluation
 Extrait de conversation :
@@ -988,6 +993,7 @@ Examiner la conversation entre le soignant et Madame Delarue.
 Noter chaque étape du modèle CERTAIN présente dans l'échange sur une échelle de 1 à 5 (1 = Faible, 5 = Excellent) : Choisir, Évaluer, Reformuler, Travailler, Aborder, Investiguer, Négocier. Une étape absente de l'échange n'est pas notée (Non applicable).
 Fournir un retour avec des exemples précis tirés de la conversation pour chaque étape notée.
 Proposer des réponses alternatives uniquement si une étape obtient une note inférieure à 5/5, en s'appuyant sur le cycle reconnaissance/clarification et sur les techniques à privilégier ci-dessus.
+Toujours terminer la réponse par un paragraphe de synthèse distinct, introduit par « Retour : », qui résume la performance globale du soignant sur l'ensemble de l'échange — ce paragraphe est obligatoire même si chaque étape a déjà été commentée individuellement.
 
 Exemple d'évaluation
 Extrait de conversation :
