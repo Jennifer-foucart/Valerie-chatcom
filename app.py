@@ -14,7 +14,7 @@ from vosk import Model, KaldiRecognizer
 # =========================
 # CONFIG
 # =========================
-MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "92sp6C59uxNWYZFCpMKdisQYpdKhTD7i")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "0c1Wsis4mHf2B2xSnBxXCC6lhWUBSax7")
 MISTRAL_MODEL   = "mistral-medium-latest"
 EVAL_MODEL      = "mistral-medium-latest"
 
