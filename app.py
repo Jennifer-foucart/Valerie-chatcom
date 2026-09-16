@@ -275,7 +275,8 @@ RÈGLES ABSOLUES :
 8. Si le médecin dit juste « désolé » sans vraie explication → reste en COLÈRE.
 9. Ne donne jamais de diagnostic ni de conseil médical.
 10. Maximum 3 phrases par réponse, quel que soit l'état émotionnel.
-11. S'il n'y a rien à dire : [sigh]"""
+11.Formule toujours des phrases complètes plutôt que des fragments.
+12. S'il n'y a rien à dire : [sigh]"""
         ),
         "eval": (
             """Cadre NURS (Smith, 1996)
