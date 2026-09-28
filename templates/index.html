@@ -63,10 +63,12 @@
             flex-direction: column;
             align-items: center;
             height: 100dvh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
         /* ── Header ── */
-        header { width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
+        header { flex-shrink: 0; width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
         header span { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2); }
@@ -79,13 +81,13 @@
         .patient-page-top { width: 100%; max-width: 480px; margin-bottom: 12px; }
 
         /* ── Portrait ── */
-        #portrait-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        #portrait-wrap { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 16px 0; }
         .portrait-frame { position: relative; }
         .ring { border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .ring-outer { width: 260px; height: 260px; border: 2px solid var(--border); transition: border-color .3s; }
+        .ring-outer { width: clamp(150px, 34vh, 260px); height: clamp(150px, 34vh, 260px); max-width: 80vw; max-height: 80vw; border: 2px solid var(--border); transition: border-color .3s; }
         .ring-outer.speaking { border-color: var(--accent-lt); animation: speakring 1.6s ease infinite; }
         @keyframes speakring { 0%,100% { box-shadow: 0 0 0 0 rgba(196,154,108,.4); } 50% { box-shadow: 0 0 0 14px rgba(196,154,108,0); } }
-        .ring-inner { width: 240px; height: 240px; background: var(--cream); border: 1px solid var(--border); overflow: hidden; }
+        .ring-inner { width: calc(100% - 20px); height: calc(100% - 20px); background: var(--cream); border: 1px solid var(--border); overflow: hidden; }
         .ring-inner img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
 
         #thinking-overlay { display: none; position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); gap: 6px; align-items: center; }
@@ -101,7 +103,7 @@
         #interim.show { opacity: 1; }
 
         /* ── Input bar ── */
-        #input-bar { width: 100%; max-width: 520px; padding: 16px 28px 28px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); background: var(--paper); }
+        #input-bar { flex-shrink: 0; position: sticky; bottom: 0; width: 100%; max-width: 520px; padding: 16px 28px max(28px, env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); background: var(--paper); }
         #user-input { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; background: var(--cream); border: 1.5px solid var(--border); border-radius: 40px; padding: 10px 20px; outline: none; color: var(--ink); transition: border-color .2s; }
         #user-input::placeholder { color: var(--muted); }
         #user-input:focus { border-color: var(--accent-lt); }
@@ -126,14 +128,20 @@
             align-items: center; justify-content: flex-start;
             padding: 40px 28px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
             animation: fadeIn .5s ease both;
         }
+        .overlay-page > * { flex-shrink: 0; }
         .overlay-page.hidden { animation: fadeOut .4s ease both; pointer-events: none; }
         @keyframes fadeIn  { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeOut { from { opacity:1; transform:translateY(0);      } to { opacity:0; transform:translateY(-12px); } }
 
-        /* centre the fiche pages that have little content */
-        #patient-page, #choice-page { justify-content: center; }
+        /* centre the fiche pages that have little content — "safe" centering:
+           the spacers share leftover space when content is short, and collapse to 0
+           when content is taller than the screen, so the top is never clipped */
+        #patient-page::before, #patient-page::after,
+        #choice-page::before,  #choice-page::after { content: ""; flex: 1 1 0; min-height: 0; }
 
         /* ── Fiche ── */
         .fiche { max-width: 480px; width: 100%; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 36px 40px; box-shadow: 0 8px 40px rgba(26,26,46,.08); }
@@ -202,6 +210,30 @@
             display: none; font-family: 'DM Mono', monospace; font-size: .72rem;
             letter-spacing: .12em; text-transform: uppercase;
             color: var(--accent-lt); margin-top: 14px; text-align: center;
+        }
+
+        /* ── Small screens (phones) ── */
+        @media (max-width: 520px) {
+            .overlay-page { padding: 24px 14px; }
+            .fiche { padding: 24px 20px; }
+            .fiche-header { margin-bottom: 18px; padding-bottom: 12px; }
+            .fiche-title { font-size: 1.5rem; }
+            .fiche-section { margin-bottom: 16px; }
+            .fiche-section p, .fiche-section ul li { font-size: 1rem; line-height: 1.55; }
+            .cta-btn { padding: 12px 0; }
+            header { padding: 18px 16px 12px; }
+            header h1 { font-size: 1.5rem; }
+            #input-bar { padding: 12px 16px max(20px, env(safe-area-inset-bottom)); }
+            #transcript-box { max-height: 220px; }
+        }
+
+        /* ── Short screens (small laptops, phones in landscape) ── */
+        @media (max-height: 640px) {
+            .overlay-page { padding-top: 20px; padding-bottom: 20px; }
+            .fiche { padding-top: 22px; padding-bottom: 22px; }
+            header { padding-top: 14px; padding-bottom: 10px; }
+            #portrait-wrap { gap: 10px; padding: 8px 0; }
+            #input-bar { padding-top: 10px; }
         }
     </style>
 </head>
