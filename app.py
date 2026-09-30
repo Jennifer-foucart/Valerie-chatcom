@@ -13,6 +13,7 @@ from vosk import Model, KaldiRecognizer
 
 # =========================
 # CONFIG
+
 # =========================
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "ag_01a0f1d67b7472e4a6a2d8ba2e8e7ee3")
 MISTRAL_MODEL   = "mistral-medium-latest"
@@ -348,7 +349,7 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
         "voice_id": VOICES["female_fr"],
     },
     "agressif": {
-        "label": "Agressif",
+        "label": "NURS",
         "system": (
             """RÔLE : Tu es Valérie Decocq, une patiente. Tu ne joues JAMAIS le rôle du médecin. Tu ne donnes jamais de conseils médicaux. Tu parles UNIQUEMENT en français.
 
