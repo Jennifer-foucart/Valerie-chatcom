@@ -212,6 +212,42 @@
             color: var(--accent-lt); margin-top: 14px; text-align: center;
         }
 
+        /* ── ULB watermark badge (CSS placeholder for the real logo) ── */
+        #ulb-badge {
+            position: fixed;
+            bottom: 12px;
+            right: 14px;
+            z-index: 400;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            opacity: 1;
+            pointer-events: none;
+            user-select: none;
+        }
+        #ulb-mark {
+            display: flex; align-items: center; justify-content: center;
+            width: 30px; height: 22px;
+            background: #00478f;
+            color: #fff;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-weight: 700;
+            font-size: .72rem;
+            letter-spacing: .01em;
+            border-radius: 3px;
+        }
+        #ulb-wordmark {
+            font-family: 'DM Mono', monospace;
+            font-size: .62rem;
+            letter-spacing: .06em;
+            color: var(--ink);
+            white-space: nowrap;
+        }
+        @media (max-width: 520px) {
+            #ulb-wordmark { display: none; }
+            #ulb-badge { bottom: 10px; right: 10px; }
+        }
+
         /* ── Small screens (phones) ── */
         @media (max-width: 520px) {
             .overlay-page { padding: 24px 14px; }
@@ -360,6 +396,15 @@
     </div>
 
     <div id="toast"></div>
+
+    <!-- Discreet institutional watermark — CSS approximation of the ULB logo
+         (blue mark + wordmark), shown low-opacity in a corner on every screen.
+         Swap for the real asset later: replace #ulb-badge's contents with
+         <img src="/static/ulb-logo.png" alt="ULB" style="height:22px"> -->
+    <div id="ulb-badge" aria-hidden="true">
+        <span id="ulb-mark">ULB</span>
+        <span id="ulb-wordmark">Université Libre de Bruxelles</span>
+    </div>
 
     <script>
         /* ── Session ── */
