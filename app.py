@@ -14,11 +14,11 @@ from vosk import Model, KaldiRecognizer
 # =========================
 # CONFIG
 # =========================
-MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "0c1Wsis4mHf2B2xSnBxXCC6lhWUBSax7")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "ag_01a0f1d67b7472e4a6a2d8ba2e8e7ee3")
 MISTRAL_MODEL   = "mistral-medium-latest"
 EVAL_MODEL      = "mistral-medium-latest"
 
-INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OTdHdE1Hb0VseVM3RXhMVlNLYVFDMGcwOEZJbVF0eUY6OGhndjNhR3JhT0JyUXJqUWZWVXZqeWlTSFJRMDZSR3RTcllVRm9BS2VYUGFrTE9RTnpOQ0xteGlicTBzZGV3MQ==")
+INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OXZJUURiTVd6VkJ5MllkV3RtR0g1UHE3VGlUdjNGLUc6bHJWOHFzaHVfbDBMVG5zSEg1b3lKeg==")
 INWORLD_TTS_URL = "https://api.inworld.ai/tts/v1/voice:stream"
 
 DEFAULT_VOICE_ID = "Hélène"
