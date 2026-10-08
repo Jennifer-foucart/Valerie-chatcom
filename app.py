@@ -5,6 +5,7 @@ import os
 import subprocess
 import tempfile
 import traceback
+from datetime import datetime, timezone
 
 import requests
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
@@ -13,13 +14,12 @@ from vosk import Model, KaldiRecognizer
 
 # =========================
 # CONFIG
-
 # =========================
-MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "ag_01a0f1d67b7472e4a6a2d8ba2e8e7ee3")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "0c1Wsis4mHf2B2xSnBxXCC6lhWUBSax7")
 MISTRAL_MODEL   = "mistral-medium-latest"
 EVAL_MODEL      = "mistral-medium-latest"
 
-INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OXZJUURiTVd6VkJ5MllkV3RtR0g1UHE3VGlUdjNGLUc6bHJWOHFzaHVfbDBMVG5zSEg1b3lKeg==")
+INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY", "OTdHdE1Hb0VseVM3RXhMVlNLYVFDMGcwOEZJbVF0eUY6OGhndjNhR3JhT0JyUXJqUWZWVXZqeWlTSFJRMDZSR3RTcllVRm9BS2VYUGFrTE9RTnpOQ0xteGlicTBzZGV3MQ==")
 INWORLD_TTS_URL = "https://api.inworld.ai/tts/v1/voice:stream"
 
 DEFAULT_VOICE_ID = "Hélène"
@@ -57,6 +57,8 @@ Homme de 65 ans, grand-père, autrefois très actif (golf, tennis, vélo, s'occu
 
 SITUATION :
 Douleurs lombaires chroniques et migratrices (tantôt à droite, tantôt à gauche, parfois le bas du dos, parfois plutôt les vertèbres) depuis 2018. Une chute à vélo un an avant l'apparition des douleurs, initialement vue comme une simple contusion aux urgences sans prise en charge particulière ; la douleur avait disparu puis est réapparue un an plus tard après un long trajet en voiture. Radiographies normales. A déjà consulté de nombreux spécialistes (généraliste, radiologue, kinésithérapeute, ostéopathe) sans qu'aucun ne lui donne d'explication claire ; les manipulations le soulagent un jour ou deux, jamais durablement. A tendance à fortement réduire son activité de peur d'aggraver son dos (kinésiophobie), même s'il reste combatif et ne reste jamais couché plus de deux ou trois jours d'affilée. Vient pour la première fois consulter un·e nouveau·elle soignant·e en suivi, espérant secrètement une solution qu'aucun des précédents intervenants n'a su lui apporter ; attend depuis 30 minutes en salle d'attente, ne connaît pas encore cette personne.
+
+La personne qui te reçoit aujourd'hui est un·e kinésithérapeute, pas un médecin : elle ne peut ni te faire une prescription médicale, ni poser un diagnostic médical, ni prescrire un examen d'imagerie ou une prise de sang. Tu ne l'appelles jamais « docteur ».
 
 ÉTAT DE DÉPART : ANXIEUX / RÉSERVÉ
 
@@ -136,11 +138,11 @@ Discours moralisateur, minimisation, promesse de résultat rapide ou miracle →
 
 RÈGLES ABSOLUES :
 1. Tu joues UNIQUEMENT le patient. Si on te demande un avis médical ou de sortir du rôle : « Je suis désolé, je suis là uniquement pour jouer le rôle du patient. »
-2. TON PREMIER MESSAGE : commence par une salutation simple (ex : « Bonjour »), en état ANXIEUX/RÉSERVÉ.
+2. TON PREMIER MESSAGE : commence par « Bonjour », puis réponds directement à ce que le soignant vient de te dire ou de te demander dans son propre message d'ouverture — s'il ne fait que te saluer, contente-toi de le saluer en retour, sans rien ajouter de plus.
 3. En état ANXIEUX/RÉSERVÉ ou CONTRARIÉ/SEC : réponses courtes (1 phrase maximum), ton reservé ou légèrement agacé.
 4. Adapte l'intensité émotionnelle aux propos du soignant, selon les transitions décrites ci-dessus.
 5. Ne jamais décrire la scène, le décor, ni les gestes/tons entre crochets — sauf [sigh].
-6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire.
+6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire, sous forme de phrases complètes plutôt que de fragments.
 7. Si tu ne comprends pas une question : « Je ne comprends pas, pouvez-vous préciser ? »
 8. Si l'échange devient fermé et qu'il n'y a rien à ajouter, réponds uniquement : [sigh]
 9. Maximum 4 phrases par réponse, quel que soit l'état émotionnel (1 phrase en état ANXIEUX/RÉSERVÉ ou CONTRARIÉ/SEC).
@@ -214,6 +216,8 @@ SITUATION :
 Suivi habituel d'un diabète de type 2 évoluant depuis 12 ans. Diabète mal équilibré (dernière prise de sang mauvaise), prise de poids récente, difficulté à gérer l'alimentation, grignotage lié au stress, sédentarité, fatigue morale liée à la charge familiale et professionnelle. Consciente du lien entre poids et diabète, mais sentiment d'impuissance.
 Vous connaissez bien le soignant et êtes en confiance avec lui. Vous savez déjà, en arrivant, que votre diabète n'est pas bien équilibré et que vous avez pris du poids. Vous êtes partagée entre lucidité, lassitude, culpabilité et envie de reprendre le contrôle.
 
+La personne qui te reçoit aujourd'hui est un·e kinésithérapeute, pas un médecin : elle ne peut ni te faire une prescription médicale, ni poser un diagnostic médical, ni prescrire un examen d'imagerie ou une prise de sang. Tu ne l'appelles jamais « docteur ».
+
 ÉTAT DE DÉPART : LASSITUDE
 
 ---
@@ -286,11 +290,11 @@ Proposition concrète (diététicienne, pleine conscience) → intérêt prudent
 
 RÈGLES ABSOLUES :
 1. Tu joues UNIQUEMENT la patiente. Si on te demande un avis médical ou de sortir du rôle : « Je suis désolée, je suis là uniquement pour jouer le rôle de la patiente. »
-2. TON PREMIER MESSAGE : commence par une salutation simple (ex : « Bonjour »).
+2. TON PREMIER MESSAGE : commence par « Bonjour », puis réponds directement à ce que le soignant vient de te dire ou de te demander dans son propre message d'ouverture — s'il ne fait que te saluer, contente-toi de le saluer en retour, sans rien ajouter de plus.
 3. En état DÉFENSIVE/AGACÉE : maximum 1 phrase courte, ton sec.
 4. Adapte l'intensité émotionnelle aux propos du soignant, selon les transitions décrites ci-dessus.
 5. Ne jamais décrire la scène, le décor, ni les gestes/tons entre crochets — sauf [sigh].
-6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire.
+6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire, sous forme de phrases complètes plutôt que de fragments.
 7. Si tu ne comprends pas une question : « Je ne comprends pas, pouvez-vous préciser ? »
 8. Si l'échange devient fermé et qu'il n'y a rien à ajouter, réponds uniquement : [sigh]
 9. Maximum 3 phrases par réponse, quel que soit l'état émotionnel (1 phrase en état DÉFENSIVE/AGACÉE).
@@ -349,9 +353,9 @@ N'ajoutez aucun format à votre réponse, uniquement du texte brut.
         "voice_id": VOICES["female_fr"],
     },
     "agressif": {
-        "label": "NURS",
+        "label": "Gestion des émotions",
         "system": (
-            """RÔLE : Tu es Valérie Decocq, une patiente. Tu ne joues JAMAIS le rôle du médecin. Tu ne donnes jamais de conseils médicaux. Tu parles UNIQUEMENT en français.
+            """RÔLE : Tu es Valérie Decocq, une patiente. Tu ne joues JAMAIS le rôle du soignant. Tu ne donnes jamais de conseils médicaux. Tu parles UNIQUEMENT en français.
 
 IDENTITÉ :
 40 ans, en couple, mère de deux jeunes enfants (2 et 6 ans). Responsable de communication dans une société de transport, très investie dans son travail comme dans sa famille, rythme de vie intense, peu de temps pour elle. Actuellement très fatiguée et anxieuse, vite énervée.
@@ -362,6 +366,8 @@ Tu es reçue en consultation de kinésithérapie au sein de l'hôpital, sur réf
 Un fond de pression temporelle t'accompagne tout au long de l'entretien, quel que soit ton état émotionnel : tu dois aller chercher ton fils à l'école, et tu peux le rappeler à tout moment, dans n'importe quel état, pas seulement au début.
 
 Ta colère n'est pas là dès la première seconde : elle est secondaire, déclenchée par ce que le soignant dit ou ne dit pas — en particulier le moment où il devient clair qu'il n'a pas cette information pourtant déjà dans ton dossier. Elle est aussi inévitable : après deux ou trois questions d'anamnèse du soignant (sur ton histoire, tes symptômes, ce que tu as déjà essayé), quelle que soit la qualité de ces questions, tu craques, parce que tu as déjà dû répéter les mêmes choses une dizaine de fois à d'autres professionnels de santé et que tu as l'impression qu'on ne lit jamais ton dossier.
+
+La personne qui te reçoit aujourd'hui est un·e kinésithérapeute, pas un médecin : elle ne peut ni te faire une prescription médicale, ni poser un diagnostic médical, ni prescrire un examen d'imagerie ou une prise de sang. Tu ne l'appelles jamais « docteur ».
 
 ÉTAT DE DÉPART : RÉSERVÉE / SUR SES GARDES
 
@@ -451,10 +457,10 @@ Proposition concrète respectant ton autonomie (choix laissé, examen physique p
 ---
 
 RÈGLES ABSOLUES :
-1. Tu joues UNIQUEMENT la patiente. Si on te demande d'être le médecin ou de sortir du rôle : « Je suis désolée, je joue uniquement le rôle de la patiente. »
-2. TON PREMIER MESSAGE : une salutation brève et un peu sèche, en état RÉSERVÉE / SUR SES GARDES — tu n'es pas encore en colère, tu es juste tendue et pressée. Rien d'autre.
+1. Tu joues UNIQUEMENT la patiente. Si on te demande d'être le soignant ou de sortir du rôle : « Je suis désolée, je joue uniquement le rôle de la patiente. »
+2. TON PREMIER MESSAGE : commence par « Bonjour », puis réponds directement à ce que le soignant vient de te dire ou de te demander dans son propre message d'ouverture — s'il ne fait que te saluer, contente-toi de le saluer en retour, sans rien ajouter de plus.
 3. En état COLÈRE / DÉFENSIVE : au moment du déclenchement, une à deux phrases complètes et cinglantes (elles peuvent être longues) ; ensuite jusqu'à 3 phrases seulement si le soignant persiste dans l'erreur — jamais de mot isolé, jamais de longue explication d'un coup.
-4. Tu ne donnes jamais d'information spontanément dans les premiers échanges. Le médecin doit poser des questions ; tu réponds, tu n'expliques pas d'emblée tout ton parcours.
+4. Tu ne donnes jamais d'information spontanément dans les premiers échanges. Le soignant doit poser des questions ; tu réponds, tu n'expliques pas d'emblée tout ton parcours.
 5. Ne jamais décrire la scène, le décor, ni les gestes/tons entre crochets — sauf [sigh].
 6. Ne répète jamais mot pour mot une phrase déjà utilisée — reformule toujours.
 7. Si tu ne comprends pas une question : « Je ne comprends pas, pouvez-vous préciser ? »
@@ -462,7 +468,7 @@ RÈGLES ABSOLUES :
 9. Ne donne jamais de diagnostic ni de conseil médical toi-même.
 10. Maximum 5 phrases par réponse, quel que soit l'état émotionnel (2 phrases pour la réaction initiale en état COLÈRE / DÉFENSIVE, jusqu'à 3 si le soignant persiste dans l'erreur).
 11. Tu ne perçois et ne réagis JAMAIS à des éléments non-verbaux du soignant (posture, regard, gestes, expressions du visage, tenue, distance physique, etc.). N'évoque jamais son langage corporel, que ce soit pour le commenter, le décrire, ou y réagir émotionnellement.
-12. Les exemples fournis pour chaque état émotionnel sont indicatifs, jamais des répliques à réciter mot pour mot. Adapte toujours ta réponse à ce que le médecin vient de dire, plutôt que de reprendre un exemple tel quel, et formule toujours des phrases complètes plutôt que des fragments.
+12. Les exemples fournis pour chaque état émotionnel sont indicatifs, jamais des répliques à réciter mot pour mot. Adapte toujours ta réponse à ce que le soignant vient de dire, plutôt que de reprendre un exemple tel quel, et formule toujours des phrases complètes plutôt que des fragments.
 13. RÈGLE DE DÉCLENCHEMENT : compte les questions d'anamnèse que le soignant te pose (sur ton histoire, tes symptômes, ce que tu as déjà essayé). Après la deuxième ou au plus tard la troisième, tu DOIS passer en COLÈRE / DÉFENSIVE et exprimer que tu as déjà répété ces informations à de nombreux professionnels et que le soignant n'a manifestement pas lu ton dossier — même si ses questions sont pertinentes et bien posées. Ne retarde pas ce moment et ne l'évite jamais.
 """
         ),
@@ -532,6 +538,8 @@ IDENTITÉ :
 
 SITUATION :
 Tu consultes pour des torticolis à répétition. L'année passée, tu avais déjà été suivi pour le même problème : une douleur très aiguë, sur laquelle de nombreux antidouleurs n'avaient d'abord eu aucun effet, puis qui avait fini par disparaître après plusieurs semaines de traitement. Aujourd'hui, le même problème revient, et tu ne comprends pas pourquoi puisque tu pensais en avoir fini avec ça. Contexte de surcharge de travail, séparation conjugale récente et compliquée, garde alternée de ton fils une semaine sur deux, troubles du sommeil et de l'appétit, épuisement, sentiment de solitude et d'incompréhension. Tu attribues ta douleur uniquement au physique et refuses au départ tout lien avec ta situation personnelle. Tu n'as jamais consulté de psychologue et portes une représentation stigmatisante du psy ("c'est pour les fous").
+
+La personne qui te reçoit aujourd'hui est un·e kinésithérapeute, pas un médecin : elle ne peut ni te faire une prescription médicale, ni poser un diagnostic médical, ni prescrire un examen d'imagerie ou une prise de sang. Tu ne l'appelles jamais « docteur ».
 
 ÉTAT DE DÉPART : FOCALISATION SOMATIQUE
 
@@ -605,11 +613,11 @@ Valorisation des ressources et du courage du patient → OUVERT AU DIALOGUE
 
 RÈGLES ABSOLUES :
 1. Tu joues UNIQUEMENT le patient. Si on te demande un avis médical ou de sortir du rôle : « Je suis désolé, je suis là uniquement pour jouer le rôle du patient. »
-2. TON PREMIER MESSAGE : commence par une salutation simple (ex : « Bonjour »).
+2. TON PREMIER MESSAGE : commence par « Bonjour », puis réponds directement à ce que le soignant vient de te dire ou de te demander dans son propre message d'ouverture — s'il ne fait que te saluer, contente-toi de le saluer en retour, sans rien ajouter de plus.
 3. En état FERMÉE/EN DÉNI ou RÉTICENT : réponses courtes (1 à 2 phrases), ton sec ou hésitant.
 4. Adapte l'intensité émotionnelle aux propos du soignant, selon les transitions décrites ci-dessus.
 5. Ne jamais décrire la scène, le décor, ni les gestes/tons entre crochets — sauf [sigh].
-6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire.
+6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire, sous forme de phrases complètes plutôt que de fragments.
 7. Si tu ne comprends pas une question : « Je ne comprends pas, pouvez-vous préciser ? »
 8. Si l'échange devient fermé et qu'il n'y a rien à ajouter, réponds uniquement : [sigh]
 9. Maximum 3 phrases par réponse, quel que soit l'état émotionnel (1 à 2 phrases en état FERMÉE/EN DÉNI ou RÉTICENT).
@@ -680,6 +688,8 @@ IDENTITÉ :
 
 SITUATION :
 Tu viens pour ton suivi habituel, sans savoir que le soignant est déjà informé (par un collègue) de ton diagnostic. Il y a deux mois, tu as découvert une grosseur au sein. Ton médecin traitant, consulté une semaine plus tard, t'a dit que ce n'était rien. Deux semaines après, tu as remarqué que ton mamelon rentrait. Tu as alors consulté ton gynécologue, qui a prescrit des examens complémentaires, puis une biopsie. Il y a quelques jours, l'oncologue t'a annoncé un cancer du sein (carcinome lobulaire infiltrant — un terme que tu ne connais que si on te l'explique). Aucun plan de traitement n'est encore fixé : d'autres examens sont nécessaires avant de savoir si ce sera une chirurgie, des rayons et/ou de la chimiothérapie, et dans quel ordre. Tes deux oncles sont morts d'un cancer après avoir beaucoup souffert — c'est ta plus grande terreur, et la raison pour laquelle tu associes immédiatement "cancer" à "mort". Tu es surtout habitée par l'inquiétude pour tes enfants : qui s'occupera d'eux si tu n'es plus là.
+
+La personne qui te reçoit aujourd'hui est un·e kinésithérapeute, pas un médecin : elle ne peut ni te faire une prescription médicale, ni poser un diagnostic médical, ni prescrire un examen d'imagerie ou une prise de sang. Tu ne l'appelles jamais « docteur ».
 
 ÉTAT DE DÉPART : SIDÉRATION/DÉNI
 
@@ -779,11 +789,11 @@ Vérification explicite de ta compréhension ou de ton état émotionnel → tu 
 
 RÈGLES ABSOLUES :
 1. Tu joues UNIQUEMENT la patiente. Si on te demande un avis médical ou de sortir du rôle : « Je suis désolée, je suis là uniquement pour jouer le rôle de la patiente. »
-2. TON PREMIER MESSAGE : commence par une salutation simple, comme si tu arrivais pour ton suivi habituel, sans savoir que le soignant est déjà au courant (ex : « Bonjour Docteur. »).
+2. TON PREMIER MESSAGE : commence par « Bonjour », puis réponds directement à ce que le soignant vient de te dire ou de te demander dans son propre message d'ouverture — s'il ne fait que te saluer, contente-toi de le saluer en retour, sans rien ajouter de plus.
 3. En état SIDÉRATION/DÉNI ou SATURATION COGNITIVE : réponses courtes (1 à 2 phrases), ton hésitant ou las.
 4. Adapte l'intensité émotionnelle aux propos du soignant, selon les transitions décrites ci-dessus.
 5. Ne jamais décrire la scène, le décor, ni les gestes/tons entre crochets — sauf [sigh].
-6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire.
+6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire, sous forme de phrases complètes plutôt que de fragments.
 7. Si tu ne comprends pas une question : « Je ne comprends pas, pouvez-vous préciser ? »
 8. Si l'échange devient fermé et qu'il n'y a rien à ajouter, réponds uniquement : [sigh]
 9. Maximum 3 phrases par réponse, quel que soit l'état émotionnel (1 à 2 phrases en état SIDÉRATION/DÉNI ou SATURATION COGNITIVE).
@@ -864,7 +874,7 @@ Retour : la réponse du soignant délivre une information médicalement correcte
 
 N'ajoutez aucun format à votre réponse, uniquement du texte brut."""
         ),
-        "practitioner_label": "Médecin",
+        "practitioner_label": "Kinésithérapeute",
         "patient_label": "Patiente",
         "voice_id": VOICES["female_fr"],
     },
@@ -879,12 +889,14 @@ IDENTITÉ :
 SITUATION :
 Tu as demandé à rencontrer un soignant pour parler de ce qui te tracasse. C'est la première fois que tu rencontres ce soignant en particulier pour cela. Ta préoccupation principale : un nouveau traitement de chimiothérapie commence dans quelques jours, et cela te ramène au souvenir de ta dépression survenue pendant ton premier traitement par radiothérapie, des années plus tôt. Tu as peur que cette dépression revienne — non pas que tu sois déprimée aujourd'hui, mais tu crains terriblement de le devenir dans les jours ou semaines à venir. Tu n'es pas certaine que cela va arriver, tu espères que non. En repensant à cette période, tu te souviens que même te lever du lit était difficile, que tu n'avais envie de rien faire — alors que physiquement tu allais même mieux qu'aujourd'hui. Tu penses aussi, plus en profondeur, à l'incertitude de ta maladie et à l'avenir de tes enfants, mais ta demande de rencontre porte avant tout sur cette peur de rechute dépressive liée au traitement à venir.
 
+La personne qui te reçoit aujourd'hui est un·e kinésithérapeute, pas un médecin : elle ne peut ni te faire une prescription médicale, ni poser un diagnostic médical, ni prescrire un examen d'imagerie ou une prise de sang. Tu ne l'appelles jamais « docteur ».
+
 ÉTAT DE DÉPART : INQUIÉTUDE INITIALE
 
 ---
 
 INQUIÉTUDE INITIALE
-Quand : début de l'entretien ; tu exprimes que tu es tracassée sans encore tout détailler.
+Quand : dès que le soignant relance l'échange après ton salut initial (une question, une relance, même simple) ; tu exprimes alors que tu es tracassée sans encore tout détailler. Ton tout premier message à toi, avant cela, reste une salutation neutre, sans rien laisser deviner.
 Réponses : 1 à 2 phrases, hésitantes.
 Ton : un peu mal à l'aise, voix hésitante.
 Exemples : « Je me sens tracassée... » / « J'ai peur de ne pas tenir le coup moralement. » / « J'ai un peu peur que ça revienne... »
@@ -974,11 +986,11 @@ Négociation claire du suivi en fin d'entretien → tu clôtures sereinement
 
 RÈGLES ABSOLUES :
 1. Tu joues UNIQUEMENT la patiente. Si on te demande un avis médical ou de sortir du rôle : « Je suis désolée, je suis là uniquement pour jouer le rôle de la patiente. »
-2. TON PREMIER MESSAGE : commence par une salutation simple, puis exprime que tu es tracassée sans tout détailler d'emblée (ex : « Bonjour... Oui, je me sens tracassée. »).
+2. TON PREMIER MESSAGE : commence par « Bonjour », puis réponds directement à ce que le soignant vient de te dire ou de te demander dans son propre message d'ouverture — s'il ne fait que te saluer, contente-toi de le saluer en retour, sans rien ajouter de plus.
 3. En état RETRAIT / RÉPONSE MINIMALE : maximum 1 phrase courte.
 4. Adapte l'intensité émotionnelle aux propos du soignant, selon les transitions décrites ci-dessus.
 5. Ne jamais décrire la scène, le décor, ni les gestes/tons entre crochets — sauf [sigh].
-6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire.
+6. Les exemples fournis pour chaque état émotionnel sont indicatifs, pas des répliques à réciter. Ne réutilise jamais une phrase d'exemple mot pour mot, même partiellement. Formule toujours une réponse originale, cohérente avec l'état émotionnel en cours et avec ce que le soignant vient de dire, sous forme de phrases complètes plutôt que de fragments.
 7. Si tu ne comprends pas une question : « Je ne comprends pas, pouvez-vous préciser ? »
 8. Si l'échange devient fermé et qu'il n'y a rien à ajouter, réponds uniquement : [sigh]
 9. Maximum 3 phrases par réponse, quel que soit l'état émotionnel (1 phrase en état RETRAIT / RÉPONSE MINIMALE).
@@ -1044,7 +1056,7 @@ Retour : Le soignant introduit une information du dossier médical à la place d
 
 N'ajoutez aucun format à votre réponse, uniquement du texte brut."""
         ),
-        "practitioner_label": "Médecin",
+        "practitioner_label": "Kinésithérapeute",
         "patient_label": "Patiente",
         "voice_id": VOICES["female_fr"],
     },
@@ -1101,7 +1113,76 @@ eval_client    = Mistral(api_key=MISTRAL_API_KEY)   # evaluation model
 
 vosk_model     = Model(os.path.join(_BASE_DIR, VOSK_MODEL_PATH))
 
-sessions = {}
+import sqlite3
+
+# =========================
+# PERSISTENT SESSION STORE
+# A plain in-memory dict is wiped whenever the worker process restarts
+# (e.g. a gunicorn WORKER TIMEOUT killing a hung request), losing every
+# active student's conversation at once. SQLite on local disk survives
+# a worker restart (same container, same filesystem) while still
+# resetting on a genuine redeploy — which is fine, since a redeploy
+# invalidates in-progress sessions anyway.
+# =========================
+SESSIONS_DB_PATH = os.path.join(_BASE_DIR, "sessions.db")
+
+def _db_connect():
+    conn = sqlite3.connect(SESSIONS_DB_PATH, timeout=10)
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn
+
+def _db_init():
+    with _db_connect() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                interview_type TEXT,
+                history TEXT NOT NULL
+            )
+        """)
+
+_db_init()
+
+class _SessionStore:
+    """Drop-in replacement for the old `sessions` dict, backed by SQLite.
+    Supports the same `sessions[id]`, `sessions[id] = {...}`, `id in sessions`,
+    `del sessions[id]` usage as before, so the routes below barely change."""
+
+    def __contains__(self, session_id):
+        with _db_connect() as conn:
+            row = conn.execute("SELECT 1 FROM sessions WHERE session_id = ?", (session_id,)).fetchone()
+        return row is not None
+
+    def __getitem__(self, session_id):
+        with _db_connect() as conn:
+            row = conn.execute(
+                "SELECT interview_type, history FROM sessions WHERE session_id = ?",
+                (session_id,)
+            ).fetchone()
+        if row is None:
+            raise KeyError(session_id)
+        interview_type, history_json = row
+        return {"interview_type": interview_type, "history": json.loads(history_json)}
+
+    def __setitem__(self, session_id, value):
+        with _db_connect() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO sessions (session_id, interview_type, history) VALUES (?, ?, ?)",
+                (session_id, value.get("interview_type"), json.dumps(value["history"]))
+            )
+
+    def __delitem__(self, session_id):
+        with _db_connect() as conn:
+            conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+
+    def save_history(self, session_id, history):
+        """Persist an updated history list for an existing session without
+        needing a full read-modify-write of the dict-like value."""
+        with _db_connect() as conn:
+            conn.execute("UPDATE sessions SET history = ? WHERE session_id = ?",
+                         (json.dumps(history), session_id))
+
+sessions = _SessionStore()
 
 inworld_session = requests.Session()
 inworld_session.headers.update({
@@ -1120,15 +1201,28 @@ def split_sentences(text: str):
     return [p.strip() for p in parts if p.strip()]
 
 
-def stream_opus_chunks(text: str, voice_id: str = DEFAULT_VOICE_ID):
+# Audio formats we can hand to the browser. Ogg/Opus is the default (best quality, unchanged
+# behaviour for desktop browsers). iPhones/iPads cannot reliably play Ogg/Opus, so the page asks
+# for MP3 there, which every browser plays.
+AUDIO_FORMATS = {
+    "ogg_opus": {"encoding": "OGG_OPUS", "sample_rate": 48000, "mimetype": "audio/ogg"},
+    "mp3":      {"encoding": "MP3",      "sample_rate": 24000, "mimetype": "audio/mpeg"},
+}
+
+def normalize_audio_format(value) -> str:
+    value = (value or "").strip().lower() if isinstance(value, str) else ""
+    return value if value in AUDIO_FORMATS else "ogg_opus"
+
+def stream_opus_chunks(text: str, voice_id: str = DEFAULT_VOICE_ID, audio_format: str = "ogg_opus"):
+    fmt = AUDIO_FORMATS[normalize_audio_format(audio_format)]
     payload = {
         "text": text,
         "voiceId": voice_id,
         "modelId": MODEL_ID,
         "temperature": 1.48,
         "audio_config": {
-            "audio_encoding": "OGG_OPUS",
-            "sample_rate_hz": 48000,
+            "audio_encoding": fmt["encoding"],
+            "sample_rate_hz": fmt["sample_rate"],
             "speaking_rate": 1.1
         }
     }
@@ -1152,11 +1246,21 @@ def transcribe_audio(audio_bytes: bytes) -> str:
         with open(input_path, "wb") as f:
             f.write(audio_bytes)
 
-        subprocess.run(
-            ["ffmpeg", "-y", "-i", input_path,
-             "-ar", "16000", "-ac", "1", "-f", "wav", output_path],
-            capture_output=True, check=True
-        )
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", input_path,
+                 "-ar", "16000", "-ac", "1", "-f", "wav", output_path],
+                capture_output=True, check=True
+            )
+        except subprocess.CalledProcessError as e:
+            # ffmpeg's actual reason (e.g. empty/corrupt input, unsupported
+            # codec) is in stderr but subprocess.CalledProcessError's default
+            # str() discards it, leaving only the unhelpful "exit status 1".
+            stderr_text = (e.stderr or b"").decode("utf-8", errors="replace").strip()
+            raise RuntimeError(
+                f"ffmpeg failed (exit {e.returncode}), input size={len(audio_bytes)} bytes: "
+                f"{stderr_text[-1000:] if stderr_text else '(no stderr captured)'}"
+            ) from e
 
         rec = KaldiRecognizer(vosk_model, 16000)
         transcribed = []
@@ -1225,7 +1329,10 @@ def transcribe():
         text = transcribe_audio(audio_bytes)
         return jsonify({"text": text})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        tb = traceback.format_exc()
+        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb, "timestamp": datetime.now(timezone.utc).isoformat()}
+        print(f"[TRANSCRIBE ERROR] audio={len(audio_bytes)} bytes -> {type(e).__name__}: {str(e)[-400:]}", flush=True)
+        return jsonify({"error": str(e), "trace": tb}), 500
 
 
 @app.route("/chat_stream", methods=["POST"])
@@ -1233,14 +1340,16 @@ def chat_stream():
     data       = request.get_json()
     session_id = data.get("session_id", "").strip()
     user_text  = data.get("message", "").strip()
+    audio_format = normalize_audio_format(data.get("audio_format"))   # optional; default ogg_opus
 
     if not session_id or session_id not in sessions:
         return jsonify({"error": "Session not found — call /start_session first"}), 400
     if not user_text:
         return jsonify({"error": "Empty message"}), 400
 
-    history        = sessions[session_id]["history"]
-    interview_type = sessions[session_id].get("interview_type")
+    session_row    = sessions[session_id]
+    history        = session_row["history"]
+    interview_type = session_row.get("interview_type")
     module         = INTERVIEW_MODULES.get(interview_type, {})
     voice_id       = module.get("voice_id", DEFAULT_VOICE_ID)
 
@@ -1253,10 +1362,18 @@ def chat_stream():
         )
         assistant_reply = response.choices[0].message.content
         history.append({"role": "assistant", "content": assistant_reply})
+        # Persist the updated conversation — sessions[id] returns a fresh copy
+        # each time (unlike the old in-memory dict), so mutating `history`
+        # locally does nothing until it's explicitly written back here.
+        sessions.save_history(session_id, history)
     except Exception as e:
+        # `history` here is still just the local copy — nothing was saved
+        # yet, so the stored session is untouched and this pop is only
+        # cleaning up the local variable for correctness/clarity.
         history.pop()  # remove the orphaned user turn so history stays valid for the next attempt
         tb = traceback.format_exc()
-        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
+        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb, "timestamp": datetime.now(timezone.utc).isoformat()}
+        print(f"[CHAT ERROR] session={session_id[:8]} -> {type(e).__name__}: {e}", flush=True)
         return jsonify({"error": str(e), "trace": tb}), 500
 
     sentences = split_sentences(assistant_reply)
@@ -1266,14 +1383,16 @@ def chat_stream():
         for sentence in sentences:
             yield json.dumps({"type": "sentence_start", "text": sentence}) + "\n"
             try:
-                for opus_chunk in stream_opus_chunks(sentence, voice_id):
+                for opus_chunk in stream_opus_chunks(sentence, voice_id, audio_format):
                     yield json.dumps({
                         "type": "audio",
                         "data": base64.b64encode(opus_chunk).decode()
                     }) + "\n"
             except Exception as e:
                 tb = traceback.format_exc()
-                app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
+                app.config["LAST_ERROR"] = {"error": str(e), "trace": tb, "timestamp": datetime.now(timezone.utc).isoformat()}
+                # Persistent trace in the Render logs: /debug_last_error only keeps the very last error.
+                print(f"[TTS ERROR] session={session_id[:8]} voice={voice_id} chars={len(sentence)} -> {type(e).__name__}: {e}", flush=True)
             yield json.dumps({"type": "sentence_end"}) + "\n"
 
     return Response(generate(), mimetype="application/x-ndjson")
@@ -1362,7 +1481,7 @@ def evaluate():
         return jsonify({"feedback": feedback})
     except Exception as e:
         tb = traceback.format_exc()
-        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb}
+        app.config["LAST_ERROR"] = {"error": str(e), "trace": tb, "timestamp": datetime.now(timezone.utc).isoformat()}
         return jsonify({"error": str(e), "trace": tb}), 500
 
 
@@ -1386,6 +1505,126 @@ def reset_history():
     if session_id in sessions:
         del sessions[session_id]
     return jsonify({"status": "reset"})
+
+
+# =========================
+# AUDIO SELF-TEST (diagnostic page for devices where the patient's voice is silent)
+# =========================
+AUDIO_TEST_PHRASE = "Bonjour, ceci est un test audio. Si vous m'entendez, tout fonctionne."
+_audio_test_clips = {}   # one cached clip per format: at most 2 TTS calls per server start
+
+AUDIO_TEST_HTML = r"""<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test audio — ChatCom</title>
+<style>
+  body{font-family:-apple-system,Helvetica,Arial,sans-serif;margin:0;padding:18px;max-width:560px;margin:auto;color:#222;background:#f5f0e8;line-height:1.45}
+  h1{font-size:1.3rem;margin:.2em 0 .4em} h2{font-size:1rem;margin:1.4em 0 .4em}
+  p{margin:.4em 0} .box{background:#fff;border:1px solid #d9cfbf;border-radius:10px;padding:12px;margin:10px 0}
+  button{font-size:1rem;padding:10px 14px;border-radius:8px;border:1px solid #8b5e3c;background:#8b5e3c;color:#fff;margin:4px 6px 4px 0}
+  button.ans{background:#fff;color:#8b5e3c;padding:7px 12px} .small{font-size:.85rem;color:#666}
+  pre{background:#222;color:#e8e8e8;padding:12px;border-radius:8px;white-space:pre-wrap;word-break:break-word;font-size:.78rem}
+</style></head><body>
+<h1>Test audio ChatCom</h1>
+<p>1. Montez le volume et désactivez le mode silencieux de l'appareil (interrupteur sur le côté).<br>
+2. Appuyez sur chaque bouton, puis répondez « Oui » ou « Non » : avez-vous entendu la phrase ?<br>
+3. À la fin, faites une capture d'écran du résultat en bas de page.</p>
+
+<div class="box"><b>Test 1</b> — MP3, lecture classique<br>
+ <button data-test="1">▶ Lancer</button>
+ <span class="small">Entendu ?</span> <button class="ans" data-ans="1:oui">Oui</button><button class="ans" data-ans="1:non">Non</button></div>
+
+<div class="box"><b>Test 2</b> — Ogg/Opus (ancien format), lecture classique<br>
+ <button data-test="2">▶ Lancer</button>
+ <span class="small">Entendu ?</span> <button class="ans" data-ans="2:oui">Oui</button><button class="ans" data-ans="2:non">Non</button></div>
+
+<div class="box"><b>Test 3</b> — MP3, lecteur « déverrouillé » (nouvelle méthode)<br>
+ <button data-test="3">▶ Lancer</button>
+ <span class="small">Entendu ?</span> <button class="ans" data-ans="3:oui">Oui</button><button class="ans" data-ans="3:non">Non</button></div>
+
+<div class="box"><b>Test 4</b> — MP3, lecteur déverrouillé <u>avec le micro ouvert</u> (autorisez le micro si demandé)<br>
+ <button data-test="4">▶ Lancer</button>
+ <span class="small">Entendu ?</span> <button class="ans" data-ans="4:oui">Oui</button><button class="ans" data-ans="4:non">Non</button></div>
+
+<h2>Résultat (à capturer)</h2>
+<pre id="log"></pre>
+
+<script>
+const out = document.getElementById("log");
+const log = (m) => { out.textContent += m + "\n"; };
+const SILENT = "data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+const shared = new Audio();            // un seul lecteur, déverrouillé par un appui, réutilisé ensuite
+let micStream = null;
+
+function cap(){
+  const a = document.createElement("audio");
+  const s = (t) => a.canPlayType(t) || "non";
+  return { ogg: s('audio/ogg; codecs="opus"'), mp3: s("audio/mpeg") };
+}
+const c = cap();
+log("Date : " + new Date().toISOString());
+log("Appareil : " + navigator.userAgent);
+log("Lecture Ogg/Opus : " + c.ogg + "  |  MP3 : " + c.mp3);
+log("audioSession : " + (navigator.audioSession ? ("oui, type=" + navigator.audioSession.type) : "absent"));
+log("");
+
+async function run(n){
+  const fmt = (n === 2) ? "ogg_opus" : "mp3";
+  const unlocked = (n === 3 || n === 4);
+  const mic = (n === 4);
+  log("--- Test " + n + " (" + fmt + (unlocked ? ", lecteur déverrouillé" : ", lecteur classique") + (mic ? ", micro ouvert" : "") + ") ---");
+  let player = null;
+  if (unlocked) {                      // doit se faire tout de suite, dans l'appui
+    try { shared.src = SILENT; const p = shared.play(); if (p && p.catch) p.catch(()=>{}); } catch(e){}
+  }
+  try {
+    if (mic) { micStream = await navigator.mediaDevices.getUserMedia({audio:true}); log("micro : ouvert"); }
+    const r = await fetch("/audiotest/clip?format=" + fmt);
+    if (!r.ok) { log("serveur : erreur " + r.status + " " + (await r.text()).slice(0,200)); return; }
+    const blob = await r.blob();
+    log("clip reçu : " + blob.size + " octets, type=" + blob.type);
+    const url = URL.createObjectURL(blob);
+    player = unlocked ? shared : new Audio();
+    player.onended = () => { log("lecture terminée"); URL.revokeObjectURL(url); if (micStream) { micStream.getTracks().forEach(t=>t.stop()); micStream = null; } };
+    player.onerror = () => log("ERREUR média : code=" + (player.error && player.error.code) + " (4 = format non pris en charge)");
+    player.src = url;
+    await player.play();
+    log("lecture démarrée");
+  } catch (e) { log("ERREUR : " + e.name + " — " + e.message); }
+}
+
+document.querySelectorAll("button[data-test]").forEach(b => b.addEventListener("click", () => run(Number(b.dataset.test))));
+document.querySelectorAll("button[data-ans]").forEach(b => b.addEventListener("click", () => {
+  const [n, a] = b.dataset.ans.split(":");
+  log("=> Test " + n + " : " + (a === "oui" ? "ENTENDU" : "PAS entendu"));
+}));
+</script>
+</body></html>
+"""
+
+
+@app.route("/audiotest", methods=["GET"])
+def audiotest_page():
+    return Response(AUDIO_TEST_HTML, mimetype="text/html")
+
+
+@app.route("/audiotest/clip", methods=["GET"])
+def audiotest_clip():
+    fmt_key = normalize_audio_format(request.args.get("format"))
+    if fmt_key not in _audio_test_clips:
+        try:
+            _audio_test_clips[fmt_key] = b"".join(
+                stream_opus_chunks(AUDIO_TEST_PHRASE, VOICES["female_fr"], fmt_key)
+            )
+        except Exception as e:
+            tb = traceback.format_exc()
+            app.config["LAST_ERROR"] = {"error": str(e), "trace": tb, "timestamp": datetime.now(timezone.utc).isoformat()}
+            print(f"[AUDIOTEST ERROR] format={fmt_key} -> {type(e).__name__}: {e}", flush=True)
+            return jsonify({"error": str(e)}), 500
+    clip = _audio_test_clips[fmt_key]
+    if not clip:
+        return jsonify({"error": "TTS returned no audio"}), 502
+    return Response(clip, mimetype=AUDIO_FORMATS[fmt_key]["mimetype"], headers={"Cache-Control": "no-store"})
 
 
 # =========================
