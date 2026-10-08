@@ -272,6 +272,7 @@
             pointer-events: none;
             user-select: none;
         }
+        #fsm-logo { height: 48px; width: auto; display: none; margin-right: 8px; } /* shown only on the welcome page (see setFsmLogo) */
         #ulb-mark {
             display: flex; align-items: center; justify-content: center;
             width: 30px; height: 22px;
@@ -292,6 +293,7 @@
         }
         @media (max-width: 520px) {
             #ulb-wordmark { display: none; }
+            #fsm-logo { height: 38px; margin-right: 2px; }
             #ulb-badge { bottom: 10px; right: 10px; }
         }
 
@@ -547,6 +549,7 @@
     <div id="welcome-fine">Lyan Aljendi<br>Ingénieure &amp; Chargée de Mission</div>
 
     <div id="ulb-badge" aria-hidden="true">
+        <img id="fsm-logo" src="/static/fsm-logo.png" alt="" />
         <span id="ulb-mark">ULB</span>
         <span id="ulb-wordmark">Université Libre de Bruxelles</span>
     </div>
@@ -856,6 +859,7 @@
         document.getElementById("choice-back-btn").addEventListener("click", () => {
             hidePage("choice-page", () => {
                 document.getElementById("welcome-fine").style.display = "";
+                setFsmLogo(true);
                 showPage("welcome-page");
             });
         });
@@ -1257,15 +1261,25 @@
         inputEl.addEventListener("keydown", e => { if (e.key === "Enter") { unlockPlayer(); sendMessage(); } });
         micBtn.addEventListener("click", () => { if (inCall) stopCall(); else { unlockPlayer(); startCall(); } });
 
+        /* FSM logo (next to the ULB badge) is shown on the welcome page only */
+        function setFsmLogo(on) {
+            const el = document.getElementById("fsm-logo");
+            if (!el) return;
+            el.style.display = on ? "block" : "none";
+            el.onerror = () => { el.style.display = "none"; };
+        }
+
         /* ── Init ── */
         (async function init() {
             await loadModules();
             document.getElementById("page-loader").classList.add("hidden");
             setTimeout(() => { document.getElementById("page-loader").style.display = "none"; }, 400);
             showPage("welcome-page");
+            setFsmLogo(true);
         })();
         document.getElementById("welcome-btn").addEventListener("click", () => {
             document.getElementById("welcome-fine").style.display = "none";
+            setFsmLogo(false);
             hidePage("welcome-page", () => showPage("choice-page"));
         });
     </script>
