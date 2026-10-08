@@ -13,6 +13,7 @@
     - 2 bis. [Les prompts : `modules.txt`](#2-bis-les-prompts--modulestxt)
 3. [Stockage des sessions (SQLite)](#3-stockage-des-sessions-sqlite)
 4. [Déploiement](#4-déploiement)
+    - 4 bis. [Capacité et charge (estimation pour 300 étudiant·e·s)](#4-bis-capacité-et-charge-estimation-pour-300-étudiantes)
 5. [Clés d'API](#5-clés-dapi)
 6. [Ajouter un nouveau module (scénario)](#6-ajouter-un-nouveau-module-scénario)
 7. [Modifier un persona existant sans le casser](#7-modifier-un-persona-existant-sans-le-casser)
@@ -255,7 +256,7 @@ class _SessionStore:
 sessions = _SessionStore()
 ```
 
-### Point d'attention pour toute modification future
+### ⚠️ Point d'attention pour toute modification future
 
 `sessions[session_id]` renvoie une **copie fraîche** à chaque appel (désérialisée depuis le JSON stocké), **pas une référence vivante** comme le ferait un vrai dict. Concrètement : faire `history = sessions[id]["history"]` puis `history.append(...)` ne sauvegarde rien tant que `sessions.save_history(id, history)` n'est pas appelé explicitement. C'est déjà géré correctement dans `/chat_stream` (seul endroit qui mute l'historique), mais toute nouvelle route qui modifierait l'historique devra faire le même appel explicite.
 
@@ -284,22 +285,77 @@ except Exception as e:
 Render exécute l'application via la **Start Command** suivante (visible dans Settings → Start Command sur le service) :
 
 ```
-gunicorn app:app --timeout 120 --threads 16
+gunicorn app:app --timeout 120 --threads 4
 ```
 
 Points importants :
 - **Aucun `--workers` n'est précisé** → gunicorn tourne avec **un seul processus (worker)**, qui charge le modèle Vosk une seule fois en mémoire.
-- **`--threads 16`** : ce worker traite jusqu'à **16 requêtes en parallèle** (threads) au lieu d'une seule à la fois. Sans cela, un seul étudiant en cours de transcription (`/transcribe`, ffmpeg + Vosk) bloquait tous les autres. Ce réglage est compatible avec le stockage des sessions (section 3) : chaque opération SQLite ouvre sa propre connexion (rien n'est partagé entre threads), la base est en mode WAL et le délai d'attente est de 10 s.
+- **`--threads 4`** : ce worker traite jusqu'à **4 requêtes en parallèle** (threads) au lieu d'une seule à la fois. Sans cela, un seul étudiant en cours de transcription (`/transcribe`, ffmpeg + Vosk) bloquait tous les autres. Ce réglage est compatible avec le stockage des sessions (section 3) : chaque opération SQLite ouvre sa propre connexion (rien n'est partagé entre threads), la base est en mode WAL et le délai d'attente est de 10 s.
 - **`--timeout 120`** (au lieu des 30s par défaut de gunicorn) : une requête qui dépasse ce délai fait tuer le worker par gunicorn (`WORKER TIMEOUT` dans les logs), ce qui redémarre le processus. Avant la mise en place du stockage SQLite (section 3), cela effaçait toutes les sessions actives.
 - **Fichiers à déployer ensemble** : `app.py`, `modules.txt`, `index.html` et le dossier `static/` (logos, portraits) doivent être dans le dépôt ; mettre à jour l'un sans l'autre (ex. `app.py` récent sans `modules.txt`) empêche le démarrage ou casse l'affichage.
 - Si Render semble servir d'anciens fichiers après une mise à jour, utiliser Manual Deploy → **Clear build cache & deploy**.
 - Le déploiement se fait via Render, connecté au dépôt GitHub du projet — un `git push` sur la branche suivie déclenche normalement un redéploiement automatique (à vérifier dans Settings → Build & Deploy selon la configuration actuelle du service).
 
-**Estimation de charge** : le travail réellement coûteux en CPU est `/transcribe` (ffmpeg + Vosk) ; les appels Mistral/Inworld sont de l'attente réseau, pas du calcul local. Avec `--threads 4`, plusieurs étudiant·e·s peuvent être transcrit·e·s en même temps sans file d'attente (le service dispose de 2 CPU). Pour ~20 étudiant·e·s en usage simultané, cette configuration est suffisante.
+**Estimation de charge** : le travail réellement coûteux en CPU est `/transcribe` (ffmpeg + Vosk) ; les appels Mistral/Inworld sont de l'attente réseau, pas du calcul local. Avec `--threads 4`, plusieurs étudiant·e·s peuvent être transcrit·e·s en même temps sans file d'attente (le service dispose de 2 CPU). Pour ~20 étudiant·e·s en usage simultané, cette configuration est suffisante ; voir la section 4 bis pour l'estimation à 300 étudiant·e·s.
 
 Points de vigilance liés aux threads :
 - **Deux requêtes simultanées sur la *même* session** : `save_history` réécrit l'historique complet, donc la dernière requête écrase la précédente. En usage normal les requêtes d'une même session sont séquentielles (l'étudiant parle, puis attend la réponse), mais un double clic pourrait déclencher ce cas.
 - **Connexion Inworld partagée** : `inworld_session` (`requests.Session`) est utilisée par tous les threads. Cela fonctionne en général ; en cas d'erreurs `[TTS ERROR]` après le passage aux threads, c'est le premier point à vérifier.
+
+---
+
+## 4 bis. Capacité et charge (estimation pour 300 étudiant·e·s)
+
+*Estimations établies le 8 octobre 2026 à partir de l'usage réel d'un groupe de 19 étudiant·e·s.*
+
+### Limites de l'infrastructure
+
+| Élément | Valeur |
+|---|---|
+| Hébergement | Render, 1 instance, 2 CPU, 8 Go de mémoire |
+| Serveur | gunicorn, 1 worker, `--threads 4` (recommandé : 8, jusqu'à 16 si besoin) |
+| Sessions | SQLite (fichier local, 1 instance) |
+| Mistral (`mistral-medium-latest`) | 500 000 tokens/minute, 16,67 requêtes/seconde |
+
+### Mesures réelles (groupe de 19 étudiant·e·s)
+
+| Indicateur | Observé |
+|---|---|
+| Requêtes sur 24 h | 996 |
+| Pic de requêtes | environ 140 par demi-heure, soit ~4,7 par minute |
+| Pic CPU | environ 10 % des 2 CPU |
+| Mémoire utilisée | 8 à 10 % des 8 Go (~0,8 Go) |
+
+Ce pic de ~4,7 requêtes par minute équivaut à environ **1,5 étudiant·e parlant en continu** : les 19 étudiant·e·s n'étaient actif·ve·s qu'environ 8 % du temps, car elles et ils écoutent les réponses et réfléchissent entre deux échanges.
+
+### Projection pour 300 étudiant·e·s (usage étalé dans le temps)
+
+Facteur : 300 ÷ 19 ≈ 16.
+
+| Indicateur | Projection | Limite | Marge |
+|---|---|---|---|
+| Requêtes au pic | ~75 par minute (~1,2 par seconde) | 16,67 par seconde (Mistral) | très large |
+| Étudiant·e·s en conversation continue (équivalent) | ~25 | 60 à 90 | environ 2,5 à 3,5 × |
+| Tokens Mistral par minute | ~130 000 | 500 000 | environ 4 × |
+| Threads occupés simultanément | ~6 | 16 | environ 2,5 × |
+| CPU | quelques dizaines de % au plus | 2 CPU | confortable |
+| Mémoire | ~1 Go | 8 Go | très large |
+
+### Capacité maximale estimée (16 threads)
+
+Une conversation continue envoie un tour toutes les 30 à 60 secondes (écoute de la réponse, réflexion, détection du silence). Capacité estimée selon la durée moyenne d'un tour :
+
+| Durée d'un tour | Étudiant·e·s simultané·e·s possibles |
+|---|---|
+| 30 s | ~40 à 60 |
+| 45 s | ~60 à 90 |
+| 60 s | ~80 à 120 |
+
+Hypothèse de planification : tour de 45 secondes, soit **60 à 90 étudiant·e·s actif·ve·s au même moment**. Les limites en jeu sont : les tokens Mistral (le prompt complet et l'historique sont renvoyés à chaque tour), le nombre de threads (chaque réponse occupe un thread pendant plusieurs secondes) et le CPU (la transcription `/transcribe` est la seule opération coûteuse en local).
+
+### Conclusion
+
+Pour 300 étudiant·e·s qui utilisent ChatCom à des moments différents, **la configuration actuelle suffit** : une seule instance, sans changement de plan ni de stockage de session (SQLite), avec `--threads 8`. Les temps de réponse restent normaux, sans file d'attente visible, et les prompts sont chargés en mémoire au démarrage depuis `modules.txt` (aucune lecture de fichier pendant les conversations).
 
 ---
 
