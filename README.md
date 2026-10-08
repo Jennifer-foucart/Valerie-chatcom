@@ -255,7 +255,7 @@ class _SessionStore:
 sessions = _SessionStore()
 ```
 
-### ⚠️ Point d'attention pour toute modification future
+### Point d'attention pour toute modification future
 
 `sessions[session_id]` renvoie une **copie fraîche** à chaque appel (désérialisée depuis le JSON stocké), **pas une référence vivante** comme le ferait un vrai dict. Concrètement : faire `history = sessions[id]["history"]` puis `history.append(...)` ne sauvegarde rien tant que `sessions.save_history(id, history)` n'est pas appelé explicitement. C'est déjà géré correctement dans `/chat_stream` (seul endroit qui mute l'historique), mais toute nouvelle route qui modifierait l'historique devra faire le même appel explicite.
 
