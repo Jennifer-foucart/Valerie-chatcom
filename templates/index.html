@@ -68,15 +68,17 @@
         }
 
         /* ── Header ── */
-        header { flex-shrink: 0; width: 100%; max-width: 520px; padding: 28px 28px 18px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
+        header { flex-shrink: 0; width: 100%; max-width: 520px; padding: 36px 36px 22px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border); }
         header h1 { font-size: 2rem; font-weight: 300; letter-spacing: .04em; color: var(--accent); }
         header span { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-left: auto; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(124,186,124,.2); }
 
         /* ── Discreet "back" text-link style, shared by header back-btn and patient fiche back-btn ── */
-        #back-btn, #patient-back-btn { background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
-        #back-btn:hover, #patient-back-btn:hover { color: var(--accent); }
+        #back-btn, #patient-back-btn, #choice-back-btn, #end-btn { background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
+        #back-btn:hover, #patient-back-btn:hover, #choice-back-btn:hover, #end-btn:hover { color: var(--accent); }
         #back-btn { margin-left: 12px; }
+        #end-btn { margin-left: 12px; color: var(--accent); }
+        #back-btn, #end-btn { white-space: nowrap; }
 
         .patient-page-top { width: 100%; max-width: 480px; margin-bottom: 12px; }
 
@@ -101,9 +103,14 @@
         #status-label.active { color: var(--accent-lt); }
         #interim { font-family: 'Cormorant Garamond', serif; font-size: .95rem; font-style: italic; color: var(--muted); min-height: 1.4em; max-width: 400px; text-align: center; opacity: 0; transition: opacity .2s; }
         #interim.show { opacity: 1; }
+        /* Fallback caption: only appears when the patient's audio is missing or blocked,
+           so the student still sees the reply instead of silence. */
+        #caption { display: none; max-width: 400px; text-align: center; background: var(--cream); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; font-size: 1rem; line-height: 1.4; color: var(--ink); }
+        #caption.show { display: block; }
+        #caption .cap-note { display: block; font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 
         /* ── Input bar ── */
-        #input-bar { flex-shrink: 0; position: sticky; bottom: 0; width: 100%; max-width: 520px; padding: 16px 28px max(28px, env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); background: var(--paper); }
+        #input-bar { flex-shrink: 0; position: sticky; bottom: 0; width: 100%; max-width: 520px; padding: 20px 36px max(36px, env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); background: var(--paper); }
         #user-input { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; background: var(--cream); border: 1.5px solid var(--border); border-radius: 40px; padding: 10px 20px; outline: none; color: var(--ink); transition: border-color .2s; }
         #user-input::placeholder { color: var(--muted); }
         #user-input:focus { border-color: var(--accent-lt); }
@@ -126,7 +133,7 @@
             background: var(--paper);
             display: flex; flex-direction: column;
             align-items: center; justify-content: flex-start;
-            padding: 40px 28px;
+            padding: 56px 40px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
@@ -140,11 +147,12 @@
         /* centre the fiche pages that have little content — "safe" centering:
            the spacers share leftover space when content is short, and collapse to 0
            when content is taller than the screen, so the top is never clipped */
+        #welcome-page::before, #welcome-page::after,
         #patient-page::before, #patient-page::after,
         #choice-page::before,  #choice-page::after { content: ""; flex: 1 1 0; min-height: 0; }
 
         /* ── Fiche ── */
-        .fiche { max-width: 480px; width: 100%; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 36px 40px; box-shadow: 0 8px 40px rgba(26,26,46,.08); }
+        .fiche { max-width: 480px; width: 100%; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 44px 48px; box-shadow: 0 8px 40px rgba(26,26,46,.08); }
         .fiche-header { margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 18px; }
         .fiche-tag { font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-lt); margin-bottom: 8px; }
         .fiche-title { font-size: 1.8rem; font-weight: 300; letter-spacing: .03em; color: var(--accent); line-height: 1.2; }
@@ -212,6 +220,45 @@
             color: var(--accent-lt); margin-top: 14px; text-align: center;
         }
 
+        /* ── Welcome block (research unit) on the first screen ── */
+        .welcome {
+            max-width: 480px; width: 100%;
+            text-align: center;
+            margin-bottom: 26px;
+        }
+        .welcome-logo {
+            display: block; margin: 0 auto 6px;
+            width: clamp(150px, 31vh, 270px); max-width: 65%; height: auto;
+        }
+        .welcome-title { font-size: 1.7rem; font-weight: 300; letter-spacing: .03em; color: var(--accent); line-height: 1.2; margin-bottom: 10px; }
+        .welcome-text { font-size: 1.12rem; line-height: 1.5; color: var(--ink); }
+        #welcome-fine {
+            position: fixed; bottom: 14px; left: 14px; z-index: 400;
+            font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .08em;
+            color: var(--muted); opacity: .55; pointer-events: none; user-select: none;
+            max-width: 62vw; line-height: 1.4;
+        }
+        #welcome-page { padding: 56px 56px 80px; }
+        #welcome-page .welcome, #welcome-page .cta-btn { max-width: 440px; }
+        .welcome-text-2 { margin-top: 10px; }
+        .welcome-credits {
+            margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+        .welcome-credit-name { font-size: 1.6rem; font-weight: 400; letter-spacing: .02em; color: var(--accent); line-height: 1.15; }
+        .welcome-credit-role { font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+        @media (max-width: 520px) {
+            #welcome-page { padding: 40px 36px 80px; }
+            .welcome { margin-bottom: 16px; }
+            .welcome-logo { width: 150px; }
+            .welcome-title { font-size: 1.45rem; }
+            .welcome-text { font-size: 1.02rem; }
+            .welcome-credit-name { font-size: 1.4rem; }
+            }
+        @media (max-height: 640px) {
+            .welcome-logo { width: 100px; }
+        }
+
         /* ── ULB watermark badge (CSS placeholder for the real logo) ── */
         #ulb-badge {
             position: fixed;
@@ -250,26 +297,89 @@
 
         /* ── Small screens (phones) ── */
         @media (max-width: 520px) {
-            .overlay-page { padding: 24px 14px; }
-            .fiche { padding: 24px 20px; }
+            .overlay-page { padding: 36px 26px; }
+            .fiche { padding: 28px 24px; }
             .fiche-header { margin-bottom: 18px; padding-bottom: 12px; }
             .fiche-title { font-size: 1.5rem; }
             .fiche-section { margin-bottom: 16px; }
             .fiche-section p, .fiche-section ul li { font-size: 1rem; line-height: 1.55; }
             .cta-btn { padding: 12px 0; }
-            header { padding: 18px 16px 12px; }
+            header { padding: 26px 24px 14px; }
             header h1 { font-size: 1.5rem; }
-            #input-bar { padding: 12px 16px max(20px, env(safe-area-inset-bottom)); }
+            header { gap: 8px; }
+            header span { display: none; }
+            #back-btn, #end-btn { margin-left: 2px; }
+            #input-bar { padding: 14px 24px max(44px, env(safe-area-inset-bottom)); }
             #transcript-box { max-height: 220px; }
         }
 
         /* ── Short screens (small laptops, phones in landscape) ── */
         @media (max-height: 640px) {
-            .overlay-page { padding-top: 20px; padding-bottom: 20px; }
+            .overlay-page { padding-top: 28px; padding-bottom: 28px; }
             .fiche { padding-top: 22px; padding-bottom: 22px; }
-            header { padding-top: 14px; padding-bottom: 10px; }
+            header { padding-top: 20px; padding-bottom: 12px; }
             #portrait-wrap { gap: 10px; padding: 8px 0; }
             #input-bar { padding-top: 10px; }
+        }
+        /* ── Landing screens on phones: fit the visible screen, centred, no scrolling ── */
+        @media (max-width: 520px) {
+            #welcome-page { padding: 14px 28px 44px; }
+            #welcome-page .welcome { margin-bottom: 0; }
+            .welcome-logo { width: clamp(90px, 21vh, 160px); width: clamp(90px, 21dvh, 160px); margin-bottom: 2px; }
+            .welcome-title { font-size: 1.3rem; margin-bottom: 6px; }
+            .welcome-text { font-size: .95rem; line-height: 1.4; }
+            .welcome-text-2 { margin-top: 6px; }
+            .welcome-credits { margin-top: 10px; padding-top: 10px; }
+            .welcome-credit-name { font-size: 1.25rem; }
+            .welcome-credit-role { font-size: .56rem; margin-top: 2px; }
+            #welcome-page .cta-btn { margin-top: 12px; padding: 11px 0; }
+
+            #choice-page { padding: 18px 26px 40px; }
+            #choice-page .fiche { padding: 18px 18px 20px; }
+            #choice-page .fiche-header { margin-bottom: 10px; padding-bottom: 10px; }
+            #choice-page .fiche-title { font-size: 1.45rem; }
+            .interview-grid { gap: 8px; margin-top: 2px; }
+            .interview-btn { padding: 11px 16px; }
+            .interview-btn .ib-label { font-size: 1.05rem; }
+            #choice-error { margin-top: 4px; min-height: 0; }
+            #choice-page .cta-btn { margin-top: 12px; padding: 11px 0; }
+        }
+        @media (max-width: 520px) and (max-height: 600px) {
+            #choice-page { padding: 12px 26px 28px; }
+            .interview-btn { padding: 9px 16px; }
+            .interview-grid { gap: 6px; }
+        }
+        /* very short phone screens: drop the second welcome paragraph so nothing scrolls */
+        @media (max-width: 520px) and (max-height: 650px) {
+            .welcome-text-2 { display: none; }
+        }
+        /* ── Landing screens on laptops/desktops: fit the window height, centred, no scrolling ── */
+        @media (min-width: 521px) and (max-height: 1000px) {
+            #welcome-page { padding: 24px 56px 56px; }
+            #welcome-page .welcome, #welcome-page .cta-btn { max-width: 520px; }
+            .welcome-logo { width: clamp(100px, 24vh, 240px); width: clamp(100px, 24dvh, 240px); margin-bottom: 0; }
+            .welcome-title { font-size: 1.55rem; margin-bottom: 6px; }
+            .welcome-text { font-size: 1.05rem; line-height: 1.42; }
+            .welcome-text-2 { margin-top: 6px; }
+            .welcome-credits { margin-top: 12px; padding-top: 12px; }
+            .welcome-credit-name { font-size: 1.4rem; }
+            #welcome-page .cta-btn { margin-top: 12px; padding: 11px 0; }
+
+            #choice-page { padding: 24px 40px 36px; }
+            #choice-page .fiche { padding: 26px 40px; }
+            #choice-page .fiche-header { margin-bottom: 12px; padding-bottom: 12px; }
+            #choice-page .fiche-title { font-size: 1.6rem; }
+            .interview-grid { gap: 8px; margin-top: 2px; }
+            .interview-btn { padding: 11px 20px; }
+            #choice-error { margin-top: 4px; min-height: 0; }
+            #choice-page .cta-btn { margin-top: 12px; padding: 11px 0; }
+        }
+        @media (min-width: 521px) and (max-height: 620px) {
+            .welcome-text-2 { display: none; }
+            #choice-page { padding: 14px 40px 24px; }
+            #choice-page .fiche { padding: 18px 32px; }
+            .interview-btn { padding: 8px 20px; }
+            .interview-grid { gap: 6px; }
         }
     </style>
 </head>
@@ -282,8 +392,39 @@
         <div class="loader-text">Chargement…</div>
     </div>
 
+    <!-- Step 0: Welcome (research unit) -->
+    <div id="welcome-page" class="overlay-page" style="display:none">
+        <div class="welcome">
+            <img class="welcome-logo" src="/static/research-unit-logo.png"
+                 alt="Unité de Recherche en Psychologie de la Santé et de la Motricité Humaine" />
+            <div class="welcome-title">Bienvenue sur Chatcom</div>
+            <p class="welcome-text">
+                Chatcom s'inscrit dans les travaux de l'Unité de Recherche en Psychologie de la
+                Santé et de la Motricité Humaine, dirigée par la Prof. Jennifer Foucart, à la
+                Faculté des Sciences de la Motricité de l'ULB, où la relation entre le soignant
+                et le patient occupe une place centrale.
+            </p>
+            <p class="welcome-text welcome-text-2">
+                Ici, vous pouvez vous entraîner à votre rythme à mener des entretiens avec des patients
+                simulés, à l'oral ou à l'écrit, puis recevoir un retour sur votre communication.
+                Osez essayer, recommencer, vous tromper : c'est en pratiquant que l'on progresse.
+                Nous vous souhaitons une belle séance&nbsp;!
+            </p>
+            <div class="welcome-credits">
+                <div class="welcome-credit">
+                    <div class="welcome-credit-name">Prof. Jennifer Foucart</div>
+                    <div class="welcome-credit-role">Responsable de l'Unité de Recherche</div>
+                </div>
+            </div>
+        </div>
+        <button class="cta-btn" id="welcome-btn">Commencer →</button>
+    </div>
+
     <!-- Step 1: Interview type -->
     <div id="choice-page" class="overlay-page" style="display:none">
+        <div class="patient-page-top">
+            <button id="choice-back-btn">← retour</button>
+        </div>
         <div class="fiche">
             <div class="fiche-header">
                 <div class="fiche-tag">Type d'entretien</div>
@@ -355,6 +496,7 @@
             <h1 id="patient-header-name">Chatcom</h1>
             <span>FR</span>
             <div class="status-dot"></div>
+            <button id="end-btn" title="Terminer la consultation et voir le transcript / l'évaluation">Terminer</button>
             <button id="back-btn">← retour</button>
         </header>
 
@@ -371,6 +513,7 @@
             </div>
             <div id="status-label">en attente</div>
             <div id="interim"></div>
+            <div id="caption"></div>
         </div>
 
         <div id="input-bar">
@@ -401,6 +544,8 @@
          (blue mark + wordmark), shown low-opacity in a corner on every screen.
          Swap for the real asset later: replace #ulb-badge's contents with
          <img src="/static/ulb-logo.png" alt="ULB" style="height:22px"> -->
+    <div id="welcome-fine">Lyan Aljendi<br>Ingénieure &amp; Chargée de Mission</div>
+
     <div id="ulb-badge" aria-hidden="true">
         <span id="ulb-mark">ULB</span>
         <span id="ulb-wordmark">Université Libre de Bruxelles</span>
@@ -603,7 +748,7 @@
         function setSpeaking(on) { isSpeaking = on; ringOuter.classList.toggle("speaking", on); if (on) { setStatus("parle…", true); setInterim(""); } }
         function setInterim(text) { interimEl.textContent = text; interimEl.classList.toggle("show", !!text); }
 
-        function showChatPage() { chatPage.style.display = "flex"; }
+        function showChatPage() { chatPage.style.display = "flex"; clearCaption(); }
         function hideChatPage() { chatPage.style.display = "none"; }
 
         /* ── Page transitions ── */
@@ -708,6 +853,12 @@
         });
 
         /* ── Step 2 (fiche) → back to Step 1 (choice) ── */
+        document.getElementById("choice-back-btn").addEventListener("click", () => {
+            hidePage("choice-page", () => {
+                document.getElementById("welcome-fine").style.display = "";
+                showPage("welcome-page");
+            });
+        });
         document.getElementById("patient-back-btn").addEventListener("click", () => {
             goBackToChoice();
             hidePage("patient-page", () => { showPage("choice-page"); loadModules(); });
@@ -715,6 +866,13 @@
 
         /* ── Step 2 (fiche) → Chat ── */
         document.getElementById("start-btn").addEventListener("click", async () => {
+            // No interview type selected (state lost): send the student back to the choice
+            // screen instead of calling the server with an empty type.
+            if (!selectedInterviewType) {
+                showToast("Veuillez choisir un type d'entretien.");
+                hidePage("patient-page", () => { showPage("choice-page"); loadModules(); });
+                return;
+            }
             const loadingEl = document.getElementById("start-loading");
             const startBtn  = document.getElementById("start-btn");
             loadingEl.style.display = "block";
@@ -737,6 +895,15 @@
                 loadingEl.style.display = "none";
                 startBtn.disabled = false;
             }
+        });
+
+        /* ── Terminer: works in voice AND typed mode (the evaluation used to be reachable
+              only by ending a voice call with the phone button) ── */
+        document.getElementById("end-btn").addEventListener("click", () => {
+            stopPlayback();
+            if (inCall) { stopCall(); return; }          // stopCall() already shows the transcript
+            setSpeaking(false); setThinking(false); setInterim(""); clearCaption();
+            showTranscript();
         });
 
         /* ── Back button (chat page) → back to patient fiche, not the type-choice page ── */
@@ -850,20 +1017,106 @@
             }
         });
 
+        /* ── Audio format ──
+           Ogg/Opus is the default (best quality, works on desktop). iPhones and iPads cannot reliably
+           play it, so the page asks the server for MP3 there. If a device claims it can play Ogg/Opus
+           but then fails, we switch to MP3 for the following replies. */
+        const AUDIO_MIME = { ogg_opus: "audio/ogg; codecs=opus", mp3: "audio/mpeg" };
+        function pickAudioFormat() {
+            try { return document.createElement("audio").canPlayType('audio/ogg; codecs="opus"') ? "ogg_opus" : "mp3"; }
+            catch { return "mp3"; }
+        }
+        let AUDIO_FORMAT = pickAudioFormat();
+
+        /* ── One shared audio player ──
+           iOS only lets a media element play if it was "unlocked" by a tap, and a brand-new Audio()
+           for every sentence (the old approach) is blocked there. So we keep ONE element, unlock it
+           inside the tap that starts the call / sends a message, and reuse it for every sentence. */
+        const player = new Audio();
+        const SILENT_WAV = "data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+        let playerUnlocked = false, playToken = 0;
+        function unlockPlayer() {
+            if (playerUnlocked || isPlaying) return;
+            try {
+                player.src = SILENT_WAV;
+                const p = player.play();
+                if (p && p.then) p.then(() => { playerUnlocked = true; if (player.src === SILENT_WAV) player.pause(); }).catch(() => {});
+                else playerUnlocked = true;
+            } catch {}
+        }
+        function stopPlayback() {
+            playToken++;                         // invalidates any callback still pending from an earlier sentence
+            player.onended = player.onerror = null;
+            try { player.pause(); } catch {}
+            audioQueue = []; isPlaying = false;
+        }
+
         /* ── Audio queue ── */
-        function enqueueAndPlay(blob) {
-            audioQueue.push(blob);
+        function enqueueAndPlay(blob, text) {
+            audioQueue.push({ blob, text });
             if (!isPlaying) playNext();
+        }
+        function mediaErrorReason(e) {           // HTMLMediaElement error codes: 3 = decode, 4 = format not supported
+            const code = e && e.code;
+            return code === 4 ? "format" : code === 3 ? "decode" : "media";
+        }
+        function playErrorReason(err) {
+            const n = err && err.name;
+            return n === "NotAllowedError" ? "blocked" : n === "NotSupportedError" ? "format" : n === "AbortError" ? "abort" : "media";
+        }
+        const REASON_TEXT = {
+            format:  "format audio non pris en charge par cet appareil",
+            decode:  "format audio non pris en charge par cet appareil",
+            blocked: "lecture bloquée par le navigateur",
+            media:   "lecture impossible sur cet appareil",
+            none:    "aucun son reçu du serveur",
+        };
+        function noteAudioFailure(reason, item) {
+            if (reason === "abort") return;      // we interrupted it ourselves, not a failure
+            if ((reason === "format" || reason === "decode") && AUDIO_FORMAT === "ogg_opus") AUDIO_FORMAT = "mp3";   // next replies: MP3
+            showCaption(item.text, REASON_TEXT[reason] || REASON_TEXT.media);
         }
         function playNext() {
             if (audioQueue.length === 0) { setSpeaking(false); resumeListening(); return; }
             isPlaying = true;
-            const blob  = audioQueue.shift();
-            const url   = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            audio.onended = () => { URL.revokeObjectURL(url); isPlaying = false; playNext(); };
-            audio.onerror = () => { URL.revokeObjectURL(url); isPlaying = false; playNext(); };
-            audio.play().catch(() => { isPlaying = false; playNext(); });
+            const item  = audioQueue.shift();
+            const url   = URL.createObjectURL(item.blob);
+            const token = playToken;
+            // One single completion path per sentence (ended / error / play() rejected can
+            // otherwise fire together and advance the queue twice).
+            let finished = false;
+            const finish = (ok, reason) => {
+                if (finished || token !== playToken) return;
+                finished = true;
+                player.onended = player.onerror = null;
+                URL.revokeObjectURL(url);
+                if (!ok) noteAudioFailure(reason, item);     // audio could not play: show the text instead
+                isPlaying = false;
+                playNext();
+            };
+            player.onended = () => finish(true);
+            player.onerror = () => finish(false, mediaErrorReason(player.error));
+            player.src = url;
+            const p = player.play();
+            if (p && p.catch) p.catch(err => finish(false, playErrorReason(err)));
+        }
+
+        /* ── Fallback caption (only used when the patient's audio is missing or blocked) ── */
+        function showCaption(text, reason) {
+            if (!text) return;
+            const el = document.getElementById("caption");
+            if (!el.classList.contains("show")) {
+                el.innerHTML = '<span class="cap-note"></span><span id="cap-text"></span>';
+                el.classList.add("show");
+            }
+            el.querySelector(".cap-note").textContent = "Audio indisponible" + (reason ? " (" + reason + ")" : "") + " — réponse du patient";
+            const t = document.getElementById("cap-text");
+            t.textContent = (t.textContent ? t.textContent + " " : "") + text;
+        }
+        function clearCaption() {
+            const el = document.getElementById("caption");
+            el.classList.remove("show");
+            el.innerHTML = "";
         }
 
         /* ── Send message ── */
@@ -872,20 +1125,21 @@
             if (!text || isProcessing) return;
             isProcessing = true;
             inputEl.value = "";
-            setInterim(""); setThinking(true);
-            audioQueue = []; isPlaying = false;
+            setInterim(""); setThinking(true); clearCaption();
+            stopPlayback();
+            const requestFormat = AUDIO_FORMAT;
 
             try {
                 const res = await fetch("/chat_stream", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ session_id: SESSION_ID, message: text })
+                    body: JSON.stringify({ session_id: SESSION_ID, message: text, audio_format: requestFormat })
                 });
                 if (!res.ok) { setThinking(false); resumeListening(); showToast("Erreur serveur."); return; }
 
                 const reader  = res.body.getReader();
                 const decoder = new TextDecoder();
-                let buffer = "", currentChunks = [];
+                let buffer = "", currentChunks = [], currentText = "", anyAudio = false;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -896,11 +1150,18 @@
                     for (const line of lines) {
                         if (!line.trim()) continue;
                         let msg; try { msg = JSON.parse(line); } catch { continue; }
-                        if      (msg.type === "sentence_start") { setThinking(false); setSpeaking(true); currentChunks = []; }
+                        if      (msg.type === "sentence_start") { setThinking(false); setSpeaking(true); currentChunks = []; currentText = msg.text || ""; }
                         else if (msg.type === "audio")          { currentChunks.push(Uint8Array.from(atob(msg.data), c => c.charCodeAt(0))); }
-                        else if (msg.type === "sentence_end")   { if (currentChunks.length) enqueueAndPlay(new Blob(currentChunks, { type: "audio/ogg; codecs=opus" })); currentChunks = []; }
+                        else if (msg.type === "sentence_end")   {
+                            if (currentChunks.length) { anyAudio = true; enqueueAndPlay(new Blob(currentChunks, { type: AUDIO_MIME[requestFormat] }), currentText); }
+                            else showCaption(currentText, REASON_TEXT.none);          // the server sent no audio for this sentence
+                            currentChunks = [];
+                        }
                     }
                 }
+                // If no sentence produced any audio, nothing will ever call playNext(), so the call
+                // would stay stuck on "parle…" and never listen again. Recover explicitly.
+                if (!anyAudio && !isPlaying && audioQueue.length === 0) { setSpeaking(false); resumeListening(); }
             } catch { setThinking(false); resumeListening(); showToast("Erreur réseau."); }
             finally  { isProcessing = false; }
         }
@@ -940,9 +1201,18 @@
 
         /* ── Call control ── */
         async function startCall() {
+            // On iOS an AudioContext only runs if it is created/resumed inside the tap that started the
+            // call, i.e. BEFORE the microphone permission prompt. Created afterwards it stays suspended,
+            // reads pure silence, and the page never notices that the student has stopped speaking
+            // (so nothing is ever sent for transcription).
+            try {
+                audioContext = new AudioContext();
+                if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+            } catch { audioContext = null; }
             try {
                 audioStream  = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioContext = new AudioContext();
+                if (!audioContext) audioContext = new AudioContext();
+                if (audioContext.state === "suspended") await audioContext.resume().catch(() => {});
                 const source = audioContext.createMediaStreamSource(audioStream);
                 analyser     = audioContext.createAnalyser(); analyser.fftSize = 2048;
                 source.connect(analyser);
@@ -963,7 +1233,10 @@
                 micBtn.classList.add("in-call");
                 iconCall.style.display = "none"; iconEndCall.style.display = "";
                 startListening();
-            } catch { showToast("Microphone non accessible."); }
+            } catch {
+                showToast("Microphone non accessible.");
+                if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
+            }
         }
 
         function stopCall() {
@@ -972,7 +1245,7 @@
             if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
             if (audioStream)  audioStream.getTracks().forEach(t => t.stop());
             if (audioContext) audioContext.close();
-            audioChunks = []; audioQueue = []; isProcessing = false; isPlaying = false;
+            audioChunks = []; stopPlayback(); isProcessing = false;
             micBtn.classList.remove("in-call");
             iconCall.style.display = ""; iconEndCall.style.display = "none";
             setSpeaking(false); setThinking(false); setInterim(""); setStatus("en attente");
@@ -980,17 +1253,21 @@
         }
 
         /* ── Events ── */
-        sendBtn.addEventListener("click", () => sendMessage());
-        inputEl.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
-        micBtn.addEventListener("click", () => { if (inCall) stopCall(); else startCall(); });
+        sendBtn.addEventListener("click", () => { unlockPlayer(); sendMessage(); });
+        inputEl.addEventListener("keydown", e => { if (e.key === "Enter") { unlockPlayer(); sendMessage(); } });
+        micBtn.addEventListener("click", () => { if (inCall) stopCall(); else { unlockPlayer(); startCall(); } });
 
         /* ── Init ── */
         (async function init() {
             await loadModules();
             document.getElementById("page-loader").classList.add("hidden");
             setTimeout(() => { document.getElementById("page-loader").style.display = "none"; }, 400);
-            showPage("choice-page");
+            showPage("welcome-page");
         })();
+        document.getElementById("welcome-btn").addEventListener("click", () => {
+            document.getElementById("welcome-fine").style.display = "none";
+            hidePage("welcome-page", () => showPage("choice-page"));
+        });
     </script>
 </body>
 </html>
