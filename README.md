@@ -284,12 +284,12 @@ except Exception as e:
 Render exécute l'application via la **Start Command** suivante (visible dans Settings → Start Command sur le service) :
 
 ```
-gunicorn app:app --timeout 120 --threads 4
+gunicorn app:app --timeout 120 --threads 16
 ```
 
 Points importants :
 - **Aucun `--workers` n'est précisé** → gunicorn tourne avec **un seul processus (worker)**, qui charge le modèle Vosk une seule fois en mémoire.
-- **`--threads 4`** : ce worker traite jusqu'à **4 requêtes en parallèle** (threads) au lieu d'une seule à la fois. Sans cela, un seul étudiant en cours de transcription (`/transcribe`, ffmpeg + Vosk) bloquait tous les autres. Ce réglage est compatible avec le stockage des sessions (section 3) : chaque opération SQLite ouvre sa propre connexion (rien n'est partagé entre threads), la base est en mode WAL et le délai d'attente est de 10 s.
+- **`--threads 16`** : ce worker traite jusqu'à **16 requêtes en parallèle** (threads) au lieu d'une seule à la fois. Sans cela, un seul étudiant en cours de transcription (`/transcribe`, ffmpeg + Vosk) bloquait tous les autres. Ce réglage est compatible avec le stockage des sessions (section 3) : chaque opération SQLite ouvre sa propre connexion (rien n'est partagé entre threads), la base est en mode WAL et le délai d'attente est de 10 s.
 - **`--timeout 120`** (au lieu des 30s par défaut de gunicorn) : une requête qui dépasse ce délai fait tuer le worker par gunicorn (`WORKER TIMEOUT` dans les logs), ce qui redémarre le processus. Avant la mise en place du stockage SQLite (section 3), cela effaçait toutes les sessions actives.
 - **Fichiers à déployer ensemble** : `app.py`, `modules.txt`, `index.html` et le dossier `static/` (logos, portraits) doivent être dans le dépôt ; mettre à jour l'un sans l'autre (ex. `app.py` récent sans `modules.txt`) empêche le démarrage ou casse l'affichage.
 - Si Render semble servir d'anciens fichiers après une mise à jour, utiliser Manual Deploy → **Clear build cache & deploy**.
